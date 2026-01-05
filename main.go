@@ -23,6 +23,14 @@ func main() {
 
 	query.NewQuery(user.model).
 		Select([]string{"id", "name"}).
+		OrderBy([]string{"id"}, "desc").
+		Build().
+		Get()
+
+	query.NewQuery(user.model).
+		Select([]string{"id", "name"}).
+		Where("id", ">", "1").
+		Where("id", "!=", "3").
 		Build().
 		Get()
 

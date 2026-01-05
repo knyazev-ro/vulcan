@@ -62,7 +62,7 @@ func (q *Query) SQL() string {
 	for _, v := range q.Bindings {
 		println(v)
 	}
-	println("SQL: ", q.fullStatement, q.Bindings)
+	println("SQL: ", q.fullStatement)
 	return q.fullStatement
 }
 
@@ -85,6 +85,7 @@ func (q *Query) Get() {
 	if err := db.Ping(); err != nil {
 		panic(err)
 	}
+	println(q.SQL())
 	rows, err := db.Query(q.fullStatement, q.Bindings...)
 	if err != nil {
 		panic(err)

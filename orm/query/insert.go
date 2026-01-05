@@ -24,9 +24,9 @@ func (q *Query) Insert(cols []string, values [][]string) bool {
 
 func ValuesFilledWithQuestions(values []string, q *Query) []string {
 	questions := []string{}
-	for _, v := range values {
+	for i, v := range values {
 		q.Bindings = append(q.Bindings, v)
-		questions = append(questions, "?")
+		questions = append(questions, fmt.Sprintf("$%d", i+1))
 	}
 	return questions
 }
