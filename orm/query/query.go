@@ -55,6 +55,7 @@ func (q *Query) Build() *Query {
 }
 
 func (q *Query) SQL() string {
+	println("SQL: ", q.fullStatement)
 	return q.fullStatement
 }
 
