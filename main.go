@@ -21,88 +21,88 @@ func NewUser() *User {
 func main() {
 	user := NewUser()
 
-	q1 := query.NewQuery(user.model).
+	query.NewQuery(user.model).
 		Select([]string{"id", "name"}).
 		Build().
-		SQL()
+		Get()
 
-	println(q1)
+	// println(q1)
 
-	query.NewQuery(user.model).
-		Select([]string{"id", "email"}).
-		Where("id", "=", "10").
-		Where("active", "=", "1").
-		Build().
-		SQL()
+	// query.NewQuery(user.model).
+	// 	Select([]string{"id", "email"}).
+	// 	Where("id", "=", "10").
+	// 	Where("active", "=", "1").
+	// 	Build().
+	// 	SQL()
 
-	query.NewQuery(user.model).
-		Select([]string{"id"}).
-		Where("role", "=", "'admin'").
-		OrWhere("role", "=", "'moderator'").
-		Build().
-		SQL()
+	// query.NewQuery(user.model).
+	// 	Select([]string{"id"}).
+	// 	Where("role", "=", "'admin'").
+	// 	OrWhere("role", "=", "'moderator'").
+	// 	Build().
+	// 	SQL()
 
-	query.NewQuery(user.model).
-		Select([]string{"id"}).
-		Where("a", "=", "1").
-		OrWhere("b", "=", "2").
-		Where("c", "=", "3").
-		Build().
-		SQL()
+	// query.NewQuery(user.model).
+	// 	Select([]string{"id"}).
+	// 	Where("a", "=", "1").
+	// 	OrWhere("b", "=", "2").
+	// 	Where("c", "=", "3").
+	// 	Build().
+	// 	SQL()
 
-	query.NewQuery(user.model).
-		Select([]string{"id"}).
-		Where("status", "=", "1").
-		WhereClause(func(q *query.Query) {
-			q.
-				Where("age", ">", "18").
-				OrWhere("role", "=", "'admin'")
-		}).
-		Build().
-		SQL()
+	// query.NewQuery(user.model).
+	// 	Select([]string{"id"}).
+	// 	Where("status", "=", "1").
+	// 	WhereClause(func(q *query.Query) {
+	// 		q.
+	// 			Where("age", ">", "18").
+	// 			OrWhere("role", "=", "'admin'")
+	// 	}).
+	// 	Build().
+	// 	SQL()
 
-	query.NewQuery(user.model).
-		Select([]string{"id"}).
-		WhereClause(func(q *query.Query) {
-			q.
-				Where("a", "=", "1").
-				OrWhereClause(func(q *query.Query) {
-					q.
-						Where("b", "=", "2").
-						Where("c", "=", "3")
-				})
-		}).
-		Build().
-		SQL()
+	// query.NewQuery(user.model).
+	// 	Select([]string{"id"}).
+	// 	WhereClause(func(q *query.Query) {
+	// 		q.
+	// 			Where("a", "=", "1").
+	// 			OrWhereClause(func(q *query.Query) {
+	// 				q.
+	// 					Where("b", "=", "2").
+	// 					Where("c", "=", "3")
+	// 			})
+	// 	}).
+	// 	Build().
+	// 	SQL()
 
-	query.NewQuery(user.model).
-		Select([]string{"users.id", "posts.title"}).
-		LeftJoin("posts", "posts.user_id", "users.id").
-		Build().
-		SQL()
+	// query.NewQuery(user.model).
+	// 	Select([]string{"users.id", "posts.title"}).
+	// 	LeftJoin("posts", "posts.user_id", "users.id").
+	// 	Build().
+	// 	SQL()
 
-	query.NewQuery(user.model).
-		Select([]string{"users.id", "posts.id"}).
-		LeftJoin("posts", "posts.user_id", "users.id").
-		Where("users.active", "=", "1").
-		WhereClause(func(q *query.Query) {
-			q.
-				Where("posts.published", "=", "1").
-				OrWhere("posts.is_preview", "=", "1")
-		}).
-		Build().
-		SQL()
+	// query.NewQuery(user.model).
+	// 	Select([]string{"users.id", "posts.id"}).
+	// 	LeftJoin("posts", "posts.user_id", "users.id").
+	// 	Where("users.active", "=", "1").
+	// 	WhereClause(func(q *query.Query) {
+	// 		q.
+	// 			Where("posts.published", "=", "1").
+	// 			OrWhere("posts.is_preview", "=", "1")
+	// 	}).
+	// 	Build().
+	// 	SQL()
 
-	query.NewQuery(user.model).
-		Select([]string{"id"}).
-		OrderBy([]string{"id"}, "asc").
-		Build().
-		SQL()
+	// query.NewQuery(user.model).
+	// 	Select([]string{"id"}).
+	// 	OrderBy([]string{"id"}, "asc").
+	// 	Build().
+	// 	SQL()
 
-	query.NewQuery(user.model).
-		Create(map[string]string{
-			"name":  "'John'",
-			"email": "'john@mail.com'",
-		})
+	// query.NewQuery(user.model).
+	// 	Create(map[string]string{
+	// 		"name":  "'John'",
+	// 		"email": "'john@mail.com'",
+	// 	})
 
 }

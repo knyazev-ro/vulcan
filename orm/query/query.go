@@ -1,14 +1,18 @@
 package query
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 
+	_ "github.com/jackc/pgx/v5/stdlib" // драйвер для database/sql
+	"github.com/knyazev-ro/vulcan/config"
 	"github.com/knyazev-ro/vulcan/orm/model"
 )
 
 type Query struct {
 	Model         model.Model
+	Bindings      []any
 	selectExp     string
 	whereExp      string
 	joinExp       string
@@ -55,7 +59,10 @@ func (q *Query) Build() *Query {
 }
 
 func (q *Query) SQL() string {
-	println("SQL: ", q.fullStatement)
+	for _, v := range q.Bindings {
+		println(v)
+	}
+	println("SQL: ", q.fullStatement, q.Bindings)
 	return q.fullStatement
 }
 
@@ -64,6 +71,33 @@ func (q *Query) RawSQL(v string) *Query {
 	return q
 }
 
-func (q *Query) Get() []string {
-	return []string{}
+func (q *Query) Get() {
+	config := config.GetConfig()
+	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/%s", config.Driver, config.User, config.Password, config.Host, config.Port, config.Database)
+
+	db, err := sql.Open("pgx", dsn) // pgx через database/sql
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	// Проверяем соединение
+	if err := db.Ping(); err != nil {
+		panic(err)
+	}
+	rows, err := db.Query(q.fullStatement, q.Bindings...)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id int
+		var name, email, role string
+		if err := rows.Scan(&id, &name); err != nil {
+			panic(err)
+		}
+		fmt.Println(id, name, email, role)
+	}
+	return
 }

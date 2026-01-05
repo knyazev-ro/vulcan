@@ -3,6 +3,8 @@ package query
 import (
 	"fmt"
 	"strings"
+
+	"github.com/knyazev-ro/vulcan/utils"
 )
 
 func (q *Query) Insert(cols []string, values [][]string) bool {
@@ -11,13 +13,22 @@ func (q *Query) Insert(cols []string, values [][]string) bool {
 		valuesStr := "(" + strings.Join(val, ", ") + ")"
 		valuesStrContainer = append(valuesStrContainer, valuesStr)
 	}
-
 	valuesStrContainerJoin := strings.Join(valuesStrContainer, ", ")
-	colsStr := "(" + strings.Join(cols, ", ") + ")"
-	statement := fmt.Sprintf("INSERT INTO %s %s VALUES %s;", q.Model.TableName, colsStr, valuesStrContainerJoin)
+	colsSafe := utils.ColsSafe(cols)
+	colsStr := "(" + strings.Join(colsSafe, ", ") + ")"
+	statement := fmt.Sprintf(`INSERT INTO %s %s VALUES %s;`, q.Model.TableName, colsStr, valuesStrContainerJoin)
 	q.fullStatement = statement
 	println(statement)
 	return true
+}
+
+func ValuesFilledWithQuestions(values []string, q *Query) []string {
+	questions := []string{}
+	for _, v := range values {
+		q.Bindings = append(q.Bindings, v)
+		questions = append(questions, "?")
+	}
+	return questions
 }
 
 func (q *Query) Create(keyvals map[string]string) *Query {
@@ -28,12 +39,14 @@ func (q *Query) Create(keyvals map[string]string) *Query {
 		values = append(values, v)
 	}
 
-	colsStr := "(" + strings.Join(cols, ", ") + ")"
-	valuesStr := "(" + strings.Join(values, ", ") + ")"
+	colsSafe := utils.ColsSafe(cols)
+	colsStr := "(" + strings.Join(colsSafe, ", ") + ")"
 
-	statement := fmt.Sprintf("INSERT INTO %s %s VALUES %s;", q.Model.TableName, colsStr, valuesStr)
+	valuesStr := "(" + strings.Join(ValuesFilledWithQuestions(values, q), ", ") + ")"
+
+	statement := fmt.Sprintf(`INSERT INTO %s %s VALUES %s;`, q.Model.TableName, colsStr, valuesStr)
 	q.fullStatement = statement
-	fmt.Println(statement)
+	fmt.Println(statement, q.Bindings)
 	// create, then bring back fresh created logic
 	// ...
 	return q

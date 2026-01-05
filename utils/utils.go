@@ -1,6 +1,9 @@
 package utils
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
 func GetFieldInfo(s interface{}) []map[string]string {
 	t := reflect.TypeOf(s)
@@ -17,4 +20,12 @@ func GetFieldInfo(s interface{}) []map[string]string {
 	}
 
 	return result
+}
+
+func ColsSafe(cols []string) []string {
+	colsSafe := []string{}
+	for _, col := range cols {
+		colsSafe = append(colsSafe, fmt.Sprintf(`"%s"`, col)) // psql
+	}
+	return colsSafe
 }

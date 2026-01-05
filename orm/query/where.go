@@ -12,7 +12,8 @@ func (q *Query) WhereStatment(col string, expr string, value string, clay bool) 
 		q.whereExp = "WHERE ("
 	}
 
-	statement := fmt.Sprintf("%s%s %s %s", whereStr, col, expr, value)
+	statement := fmt.Sprintf(`%s"%s" %s ?`, whereStr, col, expr)
+	q.Bindings = append(q.Bindings, value)
 	boolVal := "AND"
 	if clay {
 		boolVal = "OR"
