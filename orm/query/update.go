@@ -25,7 +25,7 @@ func (q *Query) Update(values map[string]any) bool {
 	q.fullStatement = fmt.Sprintf(`UPDATE "%s" SET %s`, q.Model.TableName, setsStr) + " " + q.fullStatement
 	q.appendExpressions()
 	q.fillBindingsPSQL()
-	println(q.SQL())
+	q.SQL()
 	// logic
 	return true
 }
