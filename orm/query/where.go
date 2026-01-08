@@ -1,6 +1,9 @@
 package query
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func (q *Query) WhereStatment(col string, expr string, value string, clay bool) *Query {
 	whereStr := ""
@@ -12,8 +15,15 @@ func (q *Query) WhereStatment(col string, expr string, value string, clay bool) 
 		q.whereExp = "WHERE ("
 	}
 
-	placeholder := fmt.Sprintf("$%d", len(q.Bindings)+1)
-	statement := fmt.Sprintf(`%s"%s" %s %s`, whereStr, col, expr, placeholder)
+	partsCol := strings.Split(col, ".")
+	secPart := ""
+	if len(partsCol) == 2 {
+		secPart = fmt.Sprintf(`."%s"`, partsCol[1])
+	}
+
+	placeholder := "?"
+
+	statement := fmt.Sprintf(`%s"%s"%s %s %s`, whereStr, partsCol[0], secPart, expr, placeholder)
 	q.Bindings = append(q.Bindings, value)
 	boolVal := "AND"
 	if clay {

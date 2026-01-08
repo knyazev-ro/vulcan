@@ -21,18 +21,29 @@ func NewUser() *User {
 func main() {
 	user := NewUser()
 
-	query.NewQuery(user.model).
-		Select([]string{"id", "name"}).
-		OrderBy([]string{"id"}, "desc").
-		Build().
-		Get()
+	// query.NewQuery(user.model).
+	// 	Select([]string{"id", "name"}).
+	// 	OrderBy([]string{"id"}, "desc").
+	// 	Build().
+	// 	Get()
+
+	// query.NewQuery(user.model).
+	// 	Select([]string{"id", "name"}).
+	// 	Where("id", ">", "1").
+	// 	Where("id", "!=", "3").
+	// 	Build().
+	// 	Get()
 
 	query.NewQuery(user.model).
-		Select([]string{"id", "name"}).
-		Where("id", ">", "1").
-		Where("id", "!=", "3").
-		Build().
-		Get()
+		From("posts").
+		On("posts.id", "=", "users.post_id").
+		Where("users.id", "=", "10").
+		Where("users.active", "=", "1").
+		Where("posts.name", "=", "agartha").
+		Update(map[string]any{
+			"users.role_id":  1,
+			"users.owner_id": 2,
+		})
 
 	// println(q1)
 
@@ -83,11 +94,11 @@ func main() {
 	// 	Build().
 	// 	SQL()
 
-	// query.NewQuery(user.model).
-	// 	Select([]string{"users.id", "posts.title"}).
-	// 	LeftJoin("posts", "posts.user_id", "users.id").
-	// 	Build().
-	// 	SQL()
+	query.NewQuery(user.model).
+		Select([]string{"users.id", "posts.title"}).
+		LeftJoin("posts", "posts.user_id", "users.id").
+		Build().
+		SQL()
 
 	// query.NewQuery(user.model).
 	// 	Select([]string{"users.id", "posts.id"}).

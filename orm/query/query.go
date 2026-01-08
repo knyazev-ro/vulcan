@@ -43,7 +43,15 @@ func (q *Query) Build() *Query {
 
 	q.fullStatement = fmt.Sprintf("%s %s", strings.Trim(selectStr, " "), from)
 	q.fullStatement = strings.Trim(q.fullStatement, " ")
+	q.appendExpressions()
+	q.fullStatement += ";"
 
+	q.fillBindingsPSQL()
+
+	return q
+}
+
+func (q *Query) appendExpressions() {
 	q.fullStatement += " " + strings.Trim(q.joinExp, " ")
 	q.fullStatement = strings.Trim(q.fullStatement, " ")
 
@@ -52,10 +60,6 @@ func (q *Query) Build() *Query {
 
 	q.fullStatement += " " + strings.Trim(q.orderExp, " ")
 	q.fullStatement = strings.Trim(q.fullStatement, " ")
-
-	q.fullStatement += ";"
-
-	return q
 }
 
 func (q *Query) SQL() string {
@@ -101,4 +105,21 @@ func (q *Query) Get() {
 		fmt.Println(id, name, email, role)
 	}
 	return
+}
+
+func (q *Query) fillBindingsPSQL() {
+	var b strings.Builder
+	b.Grow(len(q.fullStatement) + 16)
+
+	idx := 1
+	for i := 0; i < len(q.fullStatement); i++ {
+		if q.fullStatement[i] == '?' {
+			b.WriteString(fmt.Sprintf("$%d", idx))
+			idx++
+		} else {
+			b.WriteByte(q.fullStatement[i])
+		}
+	}
+
+	q.fullStatement = b.String()
 }

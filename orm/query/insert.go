@@ -7,10 +7,15 @@ import (
 	"github.com/knyazev-ro/vulcan/utils"
 )
 
-func (q *Query) Insert(cols []string, values [][]string) bool {
+func (q *Query) Insert(cols []string, values [][]any) bool {
 	valuesStrContainer := []string{}
 	for _, val := range values {
-		valuesStr := "(" + strings.Join(val, ", ") + ")"
+		valQ := []string{}
+		for range val {
+			valQ = append(valQ, "?")
+		}
+		valuesStr := "(" + strings.Join(valQ, ", ") + ")"
+		q.Bindings = append(q.Bindings, val...)
 		valuesStrContainer = append(valuesStrContainer, valuesStr)
 	}
 	valuesStrContainerJoin := strings.Join(valuesStrContainer, ", ")
@@ -24,9 +29,11 @@ func (q *Query) Insert(cols []string, values [][]string) bool {
 
 func ValuesFilledWithQuestions(values []string, q *Query) []string {
 	questions := []string{}
-	for i, v := range values {
+	for _, v := range values {
 		q.Bindings = append(q.Bindings, v)
-		questions = append(questions, fmt.Sprintf("$%d", i+1))
+		// index := fmt.Sprintf("$%d", i+1)
+		index := "?"
+		questions = append(questions, index)
 	}
 	return questions
 }
