@@ -2,34 +2,22 @@ package query
 
 import (
 	"fmt"
-	"strings"
+
+	"github.com/knyazev-ro/vulcan/utils"
 )
 
+type WhereQuery struct {
+}
+
 func (q *Query) WhereStatment(col string, expr string, value string, clay bool) *Query {
-	whereStr := ""
-	if q.whereExp == "" {
-		whereStr = "WHERE "
-	}
-
-	if len(q.whereExp) == 1 && q.whereExp == "(" {
-		q.whereExp = "WHERE ("
-	}
-
-	partsCol := strings.Split(col, ".")
-	secPart := ""
-	if len(partsCol) == 2 {
-		secPart = fmt.Sprintf(`."%s"`, partsCol[1])
-	}
-
 	placeholder := "?"
-
-	statement := fmt.Sprintf(`%s"%s"%s %s %s`, whereStr, partsCol[0], secPart, expr, placeholder)
+	statement := fmt.Sprintf(`%s %s %s`, utils.SeparateParts(col), expr, placeholder)
 	q.Bindings = append(q.Bindings, value)
 	boolVal := "AND"
 	if clay {
 		boolVal = "OR"
 	}
-	if q.whereExp != "WHERE (" && q.whereExp != "" && q.whereExp[len(q.whereExp)-1] != '(' {
+	if q.whereExp != "" && q.whereExp[len(q.whereExp)-1] != '(' {
 		statement = fmt.Sprintf(" %s %s", boolVal, statement)
 	}
 
@@ -46,8 +34,7 @@ func (q *Query) OrWhere(col string, expr string, value string) *Query {
 }
 
 func (q *Query) WhereClause(clause func(*Query)) *Query {
-
-	if q.whereExp != "" {
+	if q.whereExp != "" && q.whereExp[len(q.whereExp)-1] != '(' {
 		q.whereExp += " AND "
 	}
 
@@ -59,7 +46,7 @@ func (q *Query) WhereClause(clause func(*Query)) *Query {
 
 func (q *Query) OrWhereClause(clause func(*Query)) *Query {
 
-	if q.whereExp != "" {
+	if q.whereExp != "" && q.whereExp[len(q.whereExp)-1] != '(' {
 		q.whereExp += " OR "
 	}
 

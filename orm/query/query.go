@@ -19,6 +19,7 @@ type Query struct {
 	createExp     string
 	orderExp      string
 	fullStatement string
+	fromExp       string
 }
 
 func NewQuery(model model.Model) *Query {
@@ -52,11 +53,17 @@ func (q *Query) Build() *Query {
 }
 
 func (q *Query) appendExpressions() {
+
+	q.fullStatement += " " + strings.Trim(q.fromExp, " ")
+	q.fullStatement = strings.Trim(q.fullStatement, " ")
+
 	q.fullStatement += " " + strings.Trim(q.joinExp, " ")
 	q.fullStatement = strings.Trim(q.fullStatement, " ")
 
-	q.fullStatement += " " + strings.Trim(q.whereExp, " ")
-	q.fullStatement = strings.Trim(q.fullStatement, " ")
+	if q.whereExp != "" {
+		q.fullStatement += " WHERE " + strings.Trim(q.whereExp, " ")
+		q.fullStatement = strings.Trim(q.fullStatement, " ")
+	}
 
 	q.fullStatement += " " + strings.Trim(q.orderExp, " ")
 	q.fullStatement = strings.Trim(q.fullStatement, " ")
