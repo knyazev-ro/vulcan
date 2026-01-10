@@ -9,7 +9,7 @@ import (
 type WhereQuery struct {
 }
 
-func (q *Query) WhereStatment(col string, expr string, value string, clay bool) *Query {
+func (q *Query) WhereStatment(col string, expr string, value any, clay bool) *Query {
 	placeholder := "?"
 	statement := fmt.Sprintf(`%s %s %s`, utils.SeparateParts(col), expr, placeholder)
 	q.Bindings = append(q.Bindings, value)
@@ -25,11 +25,11 @@ func (q *Query) WhereStatment(col string, expr string, value string, clay bool) 
 	return q
 }
 
-func (q *Query) Where(col string, expr string, value string) *Query {
+func (q *Query) Where(col string, expr string, value any) *Query {
 	return q.WhereStatment(col, expr, value, false)
 }
 
-func (q *Query) OrWhere(col string, expr string, value string) *Query {
+func (q *Query) OrWhere(col string, expr string, value any) *Query {
 	return q.WhereStatment(col, expr, value, true)
 }
 
