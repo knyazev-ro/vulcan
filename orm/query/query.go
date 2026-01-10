@@ -18,8 +18,10 @@ type Query struct {
 	joinExp       string
 	createExp     string
 	orderExp      string
-	fullStatement string
 	fromExp       string
+	limitExp      string
+	offsetExp     string
+	fullStatement string
 }
 
 func NewQuery(model model.Model) *Query {
@@ -54,26 +56,39 @@ func (q *Query) Build() *Query {
 
 func (q *Query) appendExpressions() {
 
-	q.fullStatement += " " + strings.Trim(q.fromExp, " ")
-	q.fullStatement = strings.Trim(q.fullStatement, " ")
+	if q.fromExp != "" {
+		q.fullStatement += " " + strings.Trim(q.fromExp, " ")
+		q.fullStatement = strings.Trim(q.fullStatement, " ")
+	}
 
-	q.fullStatement += " " + strings.Trim(q.joinExp, " ")
-	q.fullStatement = strings.Trim(q.fullStatement, " ")
+	if q.joinExp != "" {
+		q.fullStatement += " " + strings.Trim(q.joinExp, " ")
+		q.fullStatement = strings.Trim(q.fullStatement, " ")
+	}
 
 	if q.whereExp != "" {
 		q.fullStatement += " WHERE " + strings.Trim(q.whereExp, " ")
 		q.fullStatement = strings.Trim(q.fullStatement, " ")
 	}
 
-	q.fullStatement += " " + strings.Trim(q.orderExp, " ")
-	q.fullStatement = strings.Trim(q.fullStatement, " ")
+	if q.orderExp != "" {
+		q.fullStatement += " " + strings.Trim(q.orderExp, " ")
+		q.fullStatement = strings.Trim(q.fullStatement, " ")
+	}
+
+	if q.limitExp != "" {
+		q.fullStatement += " " + strings.Trim(q.limitExp, " ")
+		q.fullStatement = strings.Trim(q.fullStatement, " ")
+	}
+
+	if q.offsetExp != "" {
+		q.fullStatement += " " + strings.Trim(q.offsetExp, " ")
+		q.fullStatement = strings.Trim(q.fullStatement, " ")
+	}
 }
 
 func (q *Query) SQL() string {
-	for _, v := range q.Bindings {
-		println(v)
-	}
-	println("SQL: ", q.fullStatement)
+	// println("SQL: ", q.fullStatement)
 	return q.fullStatement
 }
 

@@ -35,7 +35,7 @@ func (q *Query) typeJoin(typeJoinName string, table string, clause func(jc *Join
 	joinStr := fmt.Sprintf(`%s "%s" ON`, typeJoinName, table)
 	join := &Join{body: joinStr}
 	clause(join)
-	q.joinExp = fmt.Sprintf(`%s %s`, join.body, join.ons)
+	q.joinExp += fmt.Sprintf(` %s %s`, join.body, join.ons)
 
 	return q
 }

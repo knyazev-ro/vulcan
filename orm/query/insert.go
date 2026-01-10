@@ -23,7 +23,8 @@ func (q *Query) Insert(cols []string, values [][]any) bool {
 	colsStr := "(" + strings.Join(colsSafe, ", ") + ")"
 	statement := fmt.Sprintf(`INSERT INTO %s %s VALUES %s;`, q.Model.TableName, colsStr, valuesStrContainerJoin)
 	q.fullStatement = statement
-	println(statement)
+	q.fillBindingsPSQL()
+	println(q.fullStatement)
 	return true
 }
 
@@ -53,7 +54,8 @@ func (q *Query) Create(keyvals map[string]string) *Query {
 
 	statement := fmt.Sprintf(`INSERT INTO %s %s VALUES %s;`, q.Model.TableName, colsStr, valuesStr)
 	q.fullStatement = statement
-	fmt.Println(statement, q.Bindings)
+	q.fillBindingsPSQL()
+	fmt.Println(q.fullStatement, q.Bindings)
 	// create, then bring back fresh created logic
 	// ...
 	return q

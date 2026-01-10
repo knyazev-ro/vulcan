@@ -75,3 +75,13 @@ func (q *Query) OrOnClause(clause func(*Query)) *Query {
 	q.whereExp += ")"
 	return q
 }
+
+func (q *Query) Limit(n int) *Query {
+	q.limitExp = fmt.Sprintf(`LIMIT %d`, n)
+	return q
+}
+
+func (q *Query) Offset(n int) *Query {
+	q.offsetExp = fmt.Sprintf(`OFFSET %d`, n)
+	return q
+}
