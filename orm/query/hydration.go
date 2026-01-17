@@ -3,6 +3,9 @@ package query
 import (
 	"fmt"
 	"reflect"
+	"strings"
+
+	"github.com/knyazev-ro/vulcan/orm/consts"
 )
 
 func (q *Query[T]) reflectSliceToSlice(v []reflect.Value) []T {
@@ -13,6 +16,16 @@ func (q *Query[T]) reflectSliceToSlice(v []reflect.Value) []T {
 	return data
 }
 
+func (q *Query[T]) getPk(modelType reflect.StructField) []string {
+	pk := modelType.Tag.Get("pk")
+	tableName := strings.Trim(modelType.Tag.Get("table"), " ")
+	pkArr := []string{}
+	for _, k := range strings.Split(strings.Trim(pk, " "), ",") {
+		pkArr = append(pkArr, fmt.Sprintf("%s_%s", tableName, strings.Trim(k, " ")))
+	}
+	return pkArr
+}
+
 func (q *Query[T]) recHydration(data []map[string]any, i reflect.Value) []reflect.Value {
 	modelMetadata, ok := i.Type().Elem().FieldByName("_")
 
@@ -20,14 +33,18 @@ func (q *Query[T]) recHydration(data []map[string]any, i reflect.Value) []reflec
 		panic("model metadata was not found")
 	}
 
-	pk := modelMetadata.Tag.Get("pk")
+	pk := q.getPk(modelMetadata)
+
 	tableName := modelMetadata.Tag.Get("table")
 
-	mapByPk := map[int64][]map[string]any{}
+	mapByPk := map[string][]map[string]any{}
 	for _, row := range data {
-		pKeyCol := fmt.Sprintf("%s_%s", tableName, pk)
-		pKeyVal := row[pKeyCol].(int64)
-		mapByPk[pKeyVal] = append(mapByPk[pKeyVal], row)
+		pKeyVal := []string{}
+		for _, pkEl := range pk {
+			pKeyVal = append(pKeyVal, fmt.Sprintf("%d", row[pkEl]))
+		}
+		pKeyValStr := strings.Join(pKeyVal, ",")
+		mapByPk[pKeyValStr] = append(mapByPk[pKeyValStr], row)
 	}
 
 	structData := []reflect.Value{}
@@ -58,7 +75,7 @@ func (q *Query[T]) recHydration(data []map[string]any, i reflect.Value) []reflec
 
 			if tagType == "relation" {
 				relTypeTag := fieldType.Tag.Get("reltype")
-				if relTypeTag == OneToMany && field.Kind() == reflect.Slice {
+				if relTypeTag == consts.HasMany && field.Kind() == reflect.Slice {
 					sliceType := field.Type()    // []Some
 					elemType := sliceType.Elem() // Some
 					childrens := q.recHydration(rowsByPk, reflect.New(elemType))
@@ -67,6 +84,22 @@ func (q *Query[T]) recHydration(data []map[string]any, i reflect.Value) []reflec
 						newSlice = reflect.Append(newSlice, child)
 					}
 					field.Set(newSlice)
+				}
+
+				if relTypeTag == consts.BelongsTo && field.Kind() == reflect.Struct {
+					fieldRelationType := field.Type()
+					childrens := q.recHydration(rowsByPk, reflect.New(fieldRelationType))
+					if len(childrens) >= 1 {
+						field.Set(childrens[0])
+					}
+				}
+
+				if relTypeTag == consts.HasOne && field.Kind() == reflect.Struct {
+					fieldRelationType := field.Type()
+					childrens := q.recHydration(rowsByPk, reflect.New(fieldRelationType))
+					if len(childrens) >= 1 {
+						field.Set(childrens[0])
+					}
 				}
 			}
 		}
@@ -80,7 +113,7 @@ func (q *Query[T]) HydrationOneToOne(data []map[string]any) []T {
 	return []T{}
 }
 
-func (q *Query[T]) HydrationOneToMany(data []map[string]any) []T {
+func (q *Query[T]) HydrationHasMany(data []map[string]any) []T {
 	var m T
 	total := q.recHydration(data, reflect.ValueOf(&m))
 	return q.reflectSliceToSlice(total)

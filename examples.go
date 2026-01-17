@@ -160,19 +160,58 @@ func ExamplesQuery() {
 
 func ExamplesORM() {
 
+	type TagTest struct {
+		_    string `type:"metadata" table:"tags" pk:"id"`
+		Id   int64  `type:"column" col:"id"`
+		Name string `type:"column" col:"name"`
+	}
+
+	type PostTag struct {
+		_      string  `type:"metadata" table:"post_tags" pk:"post_id,tag_id" tabletype:"pivot"`
+		PostId int64   `type:"column" col:"post_id"`
+		TagId  int64   `type:"column" col:"tag_id"`
+		Tag    TagTest `type:"relation" table:"tags" reltype:"belongs-to" fk:"tag_id" originalkey:"id"`
+	}
+
 	type PostTest struct {
-		_      string `type:"metadata" table:"posts" pk:"id"`
+		_        string    `type:"metadata" table:"posts" pk:"id"`
+		Id       int64     `type:"column" col:"id"`
+		Name     string    `type:"column" col:"name"`
+		UserId   int64     `type:"column" col:"user_id"`
+		PostTags []PostTag `type:"relation" table:"post_tags" reltype:"has-many" fk:"post_id"`
+	}
+
+	type ProfileTest struct {
+		_      string `type:"metadata" table:"profiles" pk:"id"`
 		Id     int64  `type:"column" col:"id"`
-		Name   string `type:"column" col:"name"`
 		UserId int64  `type:"column" col:"user_id"`
+		Bio    string `type:"column" col:"bio"`
+		Avatar string `type:"column" col:"avatar"`
 	}
 
 	type UserTest struct {
-		_        string     `type:"metadata" table:"users" pk:"id"`
-		Id       int64      `type:"column" col:"id"`
-		Name     string     `type:"column" col:"name"`
-		LastName string     `type:"column" col:"last_name"`
-		Posts    []PostTest `type:"relation" table:"posts" reltype:"one-to-many" fk:"user_id"`
+		_        string      `type:"metadata" table:"users" pk:"id"`
+		Id       int64       `type:"column" col:"id"`
+		Name     string      `type:"column" col:"name"`
+		LastName string      `type:"column" col:"last_name"`
+		Posts    []PostTest  `type:"relation" table:"posts" reltype:"has-many" fk:"user_id"`
+		Profile  ProfileTest `type:"relation" table:"profiles" reltype:"has-one" fk:"user_id"`
+	}
+
+	type DefUserTest struct {
+		_        string `type:"metadata" table:"users" pk:"id"`
+		Id       int64  `type:"column" col:"id"`
+		Name     string `type:"column" col:"name"`
+		LastName string `type:"column" col:"last_name"`
+	}
+
+	type MainProfileTest struct {
+		_      string      `type:"metadata" table:"profiles" pk:"id"`
+		Id     int64       `type:"column" col:"id"`
+		UserId int64       `type:"column" col:"user_id"`
+		Bio    string      `type:"column" col:"bio"`
+		Avatar string      `type:"column" col:"avatar"`
+		User   DefUserTest `type:"relation" table:"users" reltype:"belongs-to" fk:"user_id" originalkey:"id"`
 	}
 
 	q1 := query.NewQuery[UserTest]().
@@ -180,4 +219,9 @@ func ExamplesORM() {
 		Get()
 	fmt.Println(q1)
 	fmt.Println(q1[0].Id)
+
+	q2 := query.NewQuery[MainProfileTest]().
+		Build().
+		Get()
+	fmt.Println(q2)
 }

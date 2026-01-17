@@ -6,10 +6,9 @@ import (
 	"reflect"
 
 	"github.com/knyazev-ro/vulcan/config"
+	"github.com/knyazev-ro/vulcan/orm/consts"
 	"github.com/knyazev-ro/vulcan/orm/model"
 )
-
-const OneToMany string = "one-to-many"
 
 func (q *Query[T]) recGenerateCols(i interface{}, cols []string) []string {
 	val := reflect.ValueOf(i)
@@ -39,13 +38,28 @@ func (q *Query[T]) recGenerateCols(i interface{}, cols []string) []string {
 			relTypeTag := valueType.Tag.Get("reltype")
 			tableTag := valueType.Tag.Get("table")
 			fkTag := valueType.Tag.Get("fk")
+			originalKey := valueType.Tag.Get("originalkey")
 			// one to many
-			if relTypeTag == OneToMany && field.Kind() == reflect.Slice {
-				cols = q.recGenerateCols(reflect.New(field.Type().Elem()).Interface(), cols)
+			if relTypeTag == consts.HasMany && field.Kind() == reflect.Slice {
 				q.LeftJoin(tableTag, func(jc *Join) {
 					jc.On(fmt.Sprintf(`%s.%s`, tableTag, fkTag), "=", fmt.Sprintf(`%s.%s`, TableName, pk))
 				})
+				cols = q.recGenerateCols(reflect.New(field.Type().Elem()).Interface(), cols)
 			}
+			if relTypeTag == consts.BelongsTo && field.Kind() == reflect.Struct {
+				q.LeftJoin(tableTag, func(jc *Join) {
+					jc.On(fmt.Sprintf(`%s.%s`, tableTag, originalKey), "=", fmt.Sprintf(`%s.%s`, TableName, fkTag))
+				})
+				cols = q.recGenerateCols(reflect.New(field.Type()).Interface(), cols)
+			}
+
+			if relTypeTag == consts.HasOne && field.Kind() == reflect.Struct {
+				q.LeftJoin(tableTag, func(jc *Join) {
+					jc.On(fmt.Sprintf(`%s.%s`, tableTag, fkTag), "=", fmt.Sprintf(`%s.%s`, TableName, pk))
+				})
+				cols = q.recGenerateCols(reflect.New(field.Type()).Interface(), cols)
+			}
+
 		}
 	}
 	return cols
@@ -64,35 +78,6 @@ func (q *Query[T]) MSelect(i interface{}) *Query[T] {
 		q.selectRaw(cols)
 	}
 	return q
-}
-
-func (q *Query[T]) getColsPtr(i interface{}) []any {
-	val := reflect.ValueOf(i)
-	if val.Kind() == reflect.Ptr && val.Elem().Kind() == reflect.Struct {
-		val = val.Elem()
-	} else {
-		panic("Must be a struct")
-	}
-
-	colsPtr := []any{}
-
-	for i := range val.NumField() {
-		value := val.Field(i)
-		valueType := val.Type().Field(i)
-		typeTag := valueType.Tag.Get("type")
-		if typeTag == "column" {
-			colsPtr = append(colsPtr, value.Addr().Interface())
-		}
-		if typeTag == "relation" {
-			tableTag := valueType.Tag.Get("table")
-			relTypeTag := valueType.Tag.Get("reltype")
-			fkTag := valueType.Tag.Get("fk")
-			fmt.Println(typeTag, tableTag, relTypeTag, fkTag)
-			// logic
-		}
-	}
-
-	return colsPtr
 }
 
 func (q *Query[T]) Get() []T {
@@ -136,9 +121,9 @@ func (q *Query[T]) Get() []T {
 		for i, col := range cols {
 			colsMap[col] = colValues[i]
 		}
-		fmt.Println(colsMap)
+		// fmt.Println(colsMap)
 		mapData = append(mapData, colsMap)
 	}
 
-	return q.HydrationOneToMany(mapData)
+	return q.HydrationHasMany(mapData)
 }
