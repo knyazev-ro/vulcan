@@ -7,7 +7,7 @@ import (
 	"github.com/knyazev-ro/vulcan/utils"
 )
 
-func (q *Query) Select(cols []string) *Query {
+func (q *Query[T]) Select(cols []string) *Query[T] {
 	colsSafe := utils.ColsSafe(cols)
 	colsStr := strings.Join(colsSafe, ", ")
 	selectStatement := fmt.Sprintf("SELECT %s", colsStr)
@@ -15,12 +15,19 @@ func (q *Query) Select(cols []string) *Query {
 	return q
 }
 
-func (q *Query) From(table string) *Query {
+func (q *Query[T]) selectRaw(cols []string) *Query[T] {
+	colsStr := strings.Join(cols, ", ")
+	selectStatement := fmt.Sprintf("SELECT %s", colsStr)
+	q.selectExp = selectStatement
+	return q
+}
+
+func (q *Query[T]) From(table string) *Query[T] {
 	q.fromExp = fmt.Sprintf(`FROM "%s"`, table)
 	return q
 }
 
-func (q *Query) OnStatment(left string, expr string, right string, clay bool) *Query {
+func (q *Query[T]) OnStatment(left string, expr string, right string, clay bool) *Query[T] {
 	whereStr := ""
 	if q.whereExp == "" {
 		whereStr = "WHERE "
@@ -44,15 +51,15 @@ func (q *Query) OnStatment(left string, expr string, right string, clay bool) *Q
 	return q
 }
 
-func (q *Query) On(col string, expr string, value string) *Query {
+func (q *Query[T]) On(col string, expr string, value string) *Query[T] {
 	return q.OnStatment(col, expr, value, false)
 }
 
-func (q *Query) OrOn(col string, expr string, value string) *Query {
+func (q *Query[T]) OrOn(col string, expr string, value string) *Query[T] {
 	return q.OnStatment(col, expr, value, true)
 }
 
-func (q *Query) OnClause(clause func(*Query)) *Query {
+func (q *Query[T]) OnClause(clause func(*Query[T])) *Query[T] {
 
 	if q.whereExp != "" {
 		q.whereExp += " AND "
@@ -64,7 +71,7 @@ func (q *Query) OnClause(clause func(*Query)) *Query {
 	return q
 }
 
-func (q *Query) OrOnClause(clause func(*Query)) *Query {
+func (q *Query[T]) OrOnClause(clause func(*Query[T])) *Query[T] {
 
 	if q.whereExp != "" {
 		q.whereExp += " OR "
@@ -76,12 +83,12 @@ func (q *Query) OrOnClause(clause func(*Query)) *Query {
 	return q
 }
 
-func (q *Query) Limit(n int) *Query {
+func (q *Query[T]) Limit(n int) *Query[T] {
 	q.limitExp = fmt.Sprintf(`LIMIT %d`, n)
 	return q
 }
 
-func (q *Query) Offset(n int) *Query {
+func (q *Query[T]) Offset(n int) *Query[T] {
 	q.offsetExp = fmt.Sprintf(`OFFSET %d`, n)
 	return q
 }

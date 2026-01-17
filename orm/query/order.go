@@ -7,7 +7,7 @@ import (
 	"github.com/knyazev-ro/vulcan/utils"
 )
 
-func (q *Query) OrderBy(cols []string, direction string) *Query {
+func (q *Query[T]) OrderBy(cols []string, direction string) *Query[T] {
 	colsSafe := utils.ColsSafe(cols)
 	orderCols := strings.Join(colsSafe, ", ")
 	statement := fmt.Sprintf("ORDER BY %s %s", orderCols, strings.ToUpper(direction))

@@ -1,16 +1,15 @@
 package query
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // драйвер для database/sql
-	"github.com/knyazev-ro/vulcan/config"
 	"github.com/knyazev-ro/vulcan/orm/model"
 )
 
-type Query struct {
+type Query[T any] struct {
+	returnType    T
 	Model         model.Model
 	Bindings      []any
 	selectExp     string
@@ -24,13 +23,14 @@ type Query struct {
 	fullStatement string
 }
 
-func NewQuery(model model.Model) *Query {
-	return &Query{
-		Model: model,
-	}
+func NewQuery[T any]() *Query[T] {
+	q := &Query[T]{}
+	var i T
+	q.MSelect(&i)
+	return q
 }
 
-func (q *Query) Build() *Query {
+func (q *Query[T]) Build() *Query[T] {
 
 	if q.fullStatement != "" {
 		return q
@@ -54,7 +54,7 @@ func (q *Query) Build() *Query {
 	return q
 }
 
-func (q *Query) appendExpressions() {
+func (q *Query[T]) appendExpressions() {
 
 	if q.fromExp != "" {
 		q.fullStatement += " " + strings.Trim(q.fromExp, " ")
@@ -87,49 +87,17 @@ func (q *Query) appendExpressions() {
 	}
 }
 
-func (q *Query) SQL() string {
+func (q *Query[T]) SQL() string {
 	// println("SQL: ", q.fullStatement)
 	return q.fullStatement
 }
 
-func (q *Query) RawSQL(v string) *Query {
+func (q *Query[T]) RawSQL(v string) *Query[T] {
 	q.fullStatement = v
 	return q
 }
 
-func (q *Query) Get() {
-	config := config.GetConfig()
-	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/%s", config.Driver, config.User, config.Password, config.Host, config.Port, config.Database)
-
-	db, err := sql.Open("pgx", dsn) // pgx через database/sql
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	// Проверяем соединение
-	if err := db.Ping(); err != nil {
-		panic(err)
-	}
-	println(q.SQL())
-	rows, err := db.Query(q.fullStatement, q.Bindings...)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var id int
-		var name, email, role string
-		if err := rows.Scan(&id, &name); err != nil {
-			panic(err)
-		}
-		fmt.Println(id, name, email, role)
-	}
-	return
-}
-
-func (q *Query) fillBindingsPSQL() {
+func (q *Query[T]) fillBindingsPSQL() {
 	var b strings.Builder
 	b.Grow(len(q.fullStatement) + 16)
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func (q *Query) Update(values map[string]any) bool {
+func (q *Query[T]) Update(values map[string]any) bool {
 	sets := []string{}
 	binds := []any{}
 	for i, v := range values {

@@ -6,14 +6,16 @@ import (
 )
 
 type Post struct {
-	Id   int64  `type:"column" col:"posts_id"`
-	Name string `type:"column" col:"posts_name"`
+	TableName string
+	Id        int64  `type:"column" col:"id"`
+	Name      string `type:"column" col:"name"`
 }
 
 type Profile struct {
-	Id    int64  `type:"column" col:"users_id"`
-	Name  string `type:"column" col:"users_name"`
-	Posts []Post `type:"relation" table:"posts" reltype:"one-to-many" fk:"users_post_id" rk:"posts_id"`
+	TableName string
+	Id        int64  `type:"column" col:"id"`
+	Name      string `type:"column" col:"name"`
+	Posts     []Post `type:"relation" table:"posts" reltype:"one-to-many" fk:"user_id"`
 }
 
 type InvalidStructError struct {
@@ -32,13 +34,34 @@ func ParseStruct(i interface{}) error {
 	} else {
 		return &InvalidStructError{message: "Must be a struct"}
 	}
+	cols := []string{}
 
 	for i := range val.NumField() {
 		value := val.Field(i)
-		if value.Kind() == reflect.Int64 {
-			//
+		valueType := val.Type().Field(i)
+		structFieldName := valueType.Name
+
+		typeTag := valueType.Tag.Get("type")
+
+		if structFieldName == "TableName" {
+			fmt.Println("TableName is", value)
 		}
-		fmt.Println(value)
+
+		if typeTag == "column" {
+			colTag := valueType.Tag.Get("col")
+			fmt.Println(typeTag, colTag)
+			cols = append(cols, colTag)
+			// logic
+		}
+
+		if typeTag == "relation" {
+			tableTag := valueType.Tag.Get("table")
+			relTypeTag := valueType.Tag.Get("reltype")
+			fkTag := valueType.Tag.Get("fk")
+			fmt.Println(typeTag, tableTag, relTypeTag, fkTag)
+			// logic
+		}
+
 	}
 
 	return nil
@@ -47,6 +70,4 @@ func ParseStruct(i interface{}) error {
 func main() {
 	// ExamplesQuery()
 	ExamplesORM()
-
-	ParseStruct(&Profile{Id: 11, Name: "Azgor"})
 }

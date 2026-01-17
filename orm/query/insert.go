@@ -7,7 +7,7 @@ import (
 	"github.com/knyazev-ro/vulcan/utils"
 )
 
-func (q *Query) Insert(cols []string, values [][]any) bool {
+func (q *Query[T]) Insert(cols []string, values [][]any) bool {
 	valuesStrContainer := []string{}
 	for _, val := range values {
 		valQ := []string{}
@@ -28,7 +28,7 @@ func (q *Query) Insert(cols []string, values [][]any) bool {
 	return true
 }
 
-func ValuesFilledWithQuestions(values []string, q *Query) []string {
+func (q *Query[T]) valuesFilledWithQuestions(values []string) []string {
 	questions := []string{}
 	for _, v := range values {
 		q.Bindings = append(q.Bindings, v)
@@ -39,7 +39,7 @@ func ValuesFilledWithQuestions(values []string, q *Query) []string {
 	return questions
 }
 
-func (q *Query) Create(keyvals map[string]string) *Query {
+func (q *Query[T]) Create(keyvals map[string]string) *Query[T] {
 	values := []string{}
 	cols := []string{}
 	for k, v := range keyvals {
@@ -50,7 +50,7 @@ func (q *Query) Create(keyvals map[string]string) *Query {
 	colsSafe := utils.ColsSafe(cols)
 	colsStr := "(" + strings.Join(colsSafe, ", ") + ")"
 
-	valuesStr := "(" + strings.Join(ValuesFilledWithQuestions(values, q), ", ") + ")"
+	valuesStr := "(" + strings.Join(q.valuesFilledWithQuestions(values), ", ") + ")"
 
 	statement := fmt.Sprintf(`INSERT INTO %s %s VALUES %s;`, q.Model.TableName, colsStr, valuesStr)
 	q.fullStatement = statement

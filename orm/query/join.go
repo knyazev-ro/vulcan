@@ -31,7 +31,7 @@ func (j *Join) OrOn(left string, op string, right string) *Join {
 	return j
 }
 
-func (q *Query) typeJoin(typeJoinName string, table string, clause func(jc *Join)) *Query {
+func (q *Query[T]) typeJoin(typeJoinName string, table string, clause func(jc *Join)) *Query[T] {
 	joinStr := fmt.Sprintf(`%s "%s" ON`, typeJoinName, table)
 	join := &Join{body: joinStr}
 	clause(join)
@@ -40,17 +40,17 @@ func (q *Query) typeJoin(typeJoinName string, table string, clause func(jc *Join
 	return q
 }
 
-func (q *Query) LeftJoin(table string, clause func(jc *Join)) *Query {
+func (q *Query[T]) LeftJoin(table string, clause func(jc *Join)) *Query[T] {
 	q.typeJoin("LEFT JOIN", table, clause)
 	return q
 }
 
-func (q *Query) RightJoin(table string, clause func(jc *Join)) *Query {
+func (q *Query[T]) RightJoin(table string, clause func(jc *Join)) *Query[T] {
 	q.typeJoin("RIGHT JOIN", table, clause)
 	return q
 }
 
-func (q *Query) InnerJoin(table string, clause func(jc *Join)) *Query {
+func (q *Query[T]) InnerJoin(table string, clause func(jc *Join)) *Query[T] {
 	q.typeJoin("JOIN", table, clause)
 	return q
 }

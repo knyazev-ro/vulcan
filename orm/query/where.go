@@ -9,7 +9,7 @@ import (
 type WhereQuery struct {
 }
 
-func (q *Query) WhereStatment(col string, expr string, value any, clay bool) *Query {
+func (q *Query[T]) WhereStatment(col string, expr string, value any, clay bool) *Query[T] {
 	placeholder := "?"
 	statement := fmt.Sprintf(`%s %s %s`, utils.SeparateParts(col), expr, placeholder)
 	q.Bindings = append(q.Bindings, value)
@@ -25,15 +25,15 @@ func (q *Query) WhereStatment(col string, expr string, value any, clay bool) *Qu
 	return q
 }
 
-func (q *Query) Where(col string, expr string, value any) *Query {
+func (q *Query[T]) Where(col string, expr string, value any) *Query[T] {
 	return q.WhereStatment(col, expr, value, false)
 }
 
-func (q *Query) OrWhere(col string, expr string, value any) *Query {
+func (q *Query[T]) OrWhere(col string, expr string, value any) *Query[T] {
 	return q.WhereStatment(col, expr, value, true)
 }
 
-func (q *Query) WhereClause(clause func(*Query)) *Query {
+func (q *Query[T]) WhereClause(clause func(*Query[T])) *Query[T] {
 	if q.whereExp != "" && q.whereExp[len(q.whereExp)-1] != '(' {
 		q.whereExp += " AND "
 	}
@@ -44,7 +44,7 @@ func (q *Query) WhereClause(clause func(*Query)) *Query {
 	return q
 }
 
-func (q *Query) OrWhereClause(clause func(*Query)) *Query {
+func (q *Query[T]) OrWhereClause(clause func(*Query[T])) *Query[T] {
 
 	if q.whereExp != "" && q.whereExp[len(q.whereExp)-1] != '(' {
 		q.whereExp += " OR "
