@@ -160,20 +160,19 @@ func ExamplesQuery() {
 
 func ExamplesORM() {
 
-	type ProfileTest struct {
-		_    string `type:"metadata" table:"posts"`
-		Id   int64  `type:"column" col:"id"`
-		Name string `type:"column" col:"name"`
-		// Posts     []Post `type:"relation" table:"posts" reltype:"one-to-many" fk:"user_id"`
+	type PostTest struct {
+		_      string `type:"metadata" table:"posts" pk:"id"`
+		Id     int64  `type:"column" col:"id"`
+		Name   string `type:"column" col:"name"`
+		UserId int64  `type:"column" col:"user_id"`
 	}
 
-	q := query.NewQuery[ProfileTest]().Build().SQL()
-	fmt.Println(q)
-
 	type UserTest struct {
-		_    string `type:"metadata" table:"users"`
-		Id   int64  `type:"column" col:"id"`
-		Name string `type:"column" col:"name"`
+		_        string     `type:"metadata" table:"users" pk:"id"`
+		Id       int64      `type:"column" col:"id"`
+		Name     string     `type:"column" col:"name"`
+		LastName string     `type:"column" col:"last_name"`
+		Posts    []PostTest `type:"relation" table:"posts" reltype:"one-to-many" fk:"user_id"`
 	}
 
 	q1 := query.NewQuery[UserTest]().
