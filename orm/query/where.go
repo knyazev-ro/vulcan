@@ -55,3 +55,16 @@ func (q *Query[T]) OrWhereClause(clause func(*Query[T])) *Query[T] {
 	q.whereExp += ")"
 	return q
 }
+
+// return Model and bool - true - exists, false - not
+func (q *Query[T]) Find(id int64) (T, bool) {
+	q.Where("id", "=", id)
+	q.Build()
+	q.SQL()
+	Ts := q.Get()
+	if len(Ts) >= 1 {
+		return Ts[0], true
+	}
+	var empty T
+	return empty, false
+}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/knyazev-ro/vulcan/orm/db"
 	"github.com/knyazev-ro/vulcan/utils"
 )
 
@@ -24,11 +25,24 @@ func (q *Query[T]) Insert(cols []string, values [][]any) bool {
 	statement := fmt.Sprintf(`INSERT INTO %s %s VALUES %s;`, q.Model.TableName, colsStr, valuesStrContainerJoin)
 	q.fullStatement = statement
 	q.fillBindingsPSQL()
-	println(q.fullStatement)
-	return true
+
+	db := db.DB // предполагаем, что db.DB — это *sql.DB
+	res, err := db.Exec(q.fullStatement, q.Bindings...)
+	if err != nil {
+		panic(err)
+	}
+
+	// Опционально: количество вставленных строк
+	affected, err := res.RowsAffected()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Inserted %d rows\n", affected)
+	return affected > 0
 }
 
-func (q *Query[T]) valuesFilledWithQuestions(values []string) []string {
+func (q *Query[T]) valuesFilledWithQuestions(values []any) []string {
 	questions := []string{}
 	for _, v := range values {
 		q.Bindings = append(q.Bindings, v)
@@ -39,8 +53,8 @@ func (q *Query[T]) valuesFilledWithQuestions(values []string) []string {
 	return questions
 }
 
-func (q *Query[T]) Create(keyvals map[string]string) *Query[T] {
-	values := []string{}
+func (q *Query[T]) Create(keyvals map[string]any) *Query[T] {
+	values := []any{}
 	cols := []string{}
 	for k, v := range keyvals {
 		cols = append(cols, k)
@@ -55,8 +69,17 @@ func (q *Query[T]) Create(keyvals map[string]string) *Query[T] {
 	statement := fmt.Sprintf(`INSERT INTO %s %s VALUES %s;`, q.Model.TableName, colsStr, valuesStr)
 	q.fullStatement = statement
 	q.fillBindingsPSQL()
-	fmt.Println(q.fullStatement, q.Bindings)
-	// create, then bring back fresh created logic
-	// ...
+
+	db := db.DB // предполагаем, что db.DB — это *sql.DB
+	res, err := db.Exec(q.fullStatement, q.Bindings...)
+	if err != nil {
+		panic(err)
+	}
+
+	lastID, err := res.LastInsertId()
+	if err == nil {
+		fmt.Printf("Inserted row ID: %d\n", lastID)
+	}
+
 	return q
 }

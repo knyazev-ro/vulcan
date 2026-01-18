@@ -3,6 +3,8 @@ package query
 import (
 	"fmt"
 	"strings"
+
+	"github.com/knyazev-ro/vulcan/orm/db"
 )
 
 func (q *Query[T]) Update(values map[string]any) bool {
@@ -26,6 +28,19 @@ func (q *Query[T]) Update(values map[string]any) bool {
 	q.appendExpressions()
 	q.fillBindingsPSQL()
 	q.SQL()
-	// logic
+
+	db := db.DB // предполагаем, что db.DB — это *sql.DB
+	res, err := db.Exec(q.fullStatement, q.Bindings...)
+	if err != nil {
+		panic(err)
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Update affected %d rows\n", affected)
+
 	return true
 }

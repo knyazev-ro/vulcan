@@ -130,7 +130,7 @@ func ExamplesQuery() {
 		SQL()
 
 	query.NewQuery[UserTest]().
-		Create(map[string]string{
+		Create(map[string]any{
 			"name":      "John",
 			"last_name": "Johanson",
 		})
@@ -233,6 +233,14 @@ func ExamplesORM() {
 		User   DefUserTest `type:"relation" table:"users" reltype:"belongs-to" fk:"user_id" originalkey:"id"`
 	}
 
+	query.NewQuery[UserTest]().Where("id", "=", 1).Update(map[string]any{
+		"name": "DuranDuran",
+	})
+
+	query.NewQuery[UserTest]().Create(map[string]any{
+		"name": "Garry",
+	})
+
 	start := time.Now()
 	fmt.Println()
 	q1 := query.NewQuery[UserTest]().
@@ -241,4 +249,11 @@ func ExamplesORM() {
 	fmt.Println(q1)
 	end := time.Now()
 	fmt.Println(end.Sub(start))
+
+	model, ok := query.NewQuery[UserTest]().Find(2)
+
+	if ok {
+		fmt.Println(model)
+	}
+
 }
