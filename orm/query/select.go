@@ -27,6 +27,11 @@ func (q *Query[T]) From(table string) *Query[T] {
 	return q
 }
 
+func (q *Query[T]) Using(table string) *Query[T] {
+	q.usingExp = fmt.Sprintf(`Using "%s"`, table)
+	return q
+}
+
 func (q *Query[T]) OnStatment(left string, expr string, right string, clay bool) *Query[T] {
 	whereStr := ""
 	if q.whereExp == "" {

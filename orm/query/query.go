@@ -18,6 +18,7 @@ type Query[T any] struct {
 	createExp     string
 	orderExp      string
 	fromExp       string
+	usingExp      string
 	limitExp      string
 	offsetExp     string
 	fullStatement string
@@ -58,6 +59,11 @@ func (q *Query[T]) appendExpressions() {
 
 	if q.fromExp != "" {
 		q.fullStatement += " " + strings.Trim(q.fromExp, " ")
+		q.fullStatement = strings.Trim(q.fullStatement, " ")
+	}
+
+	if q.usingExp != "" {
+		q.fullStatement += " " + strings.Trim(q.usingExp, " ")
 		q.fullStatement = strings.Trim(q.fullStatement, " ")
 	}
 
