@@ -233,12 +233,16 @@ func ExamplesORM() {
 		User   DefUserTest `type:"relation" table:"users" reltype:"belongs-to" fk:"user_id" originalkey:"id"`
 	}
 
-	query.NewQuery[UserTest]().Where("id", "=", 1).Update(map[string]any{
+	query.NewQuery[UserTest]().Where("name", "like", "Bobby").Update(map[string]any{
 		"name": "DuranDuran",
 	})
 
 	query.NewQuery[UserTest]().Create(map[string]any{
 		"name": "Garry",
+	})
+
+	query.NewQuery[UserTest]().Create(map[string]any{
+		"name": "Bobby",
 	})
 
 	start := time.Now()
@@ -250,10 +254,22 @@ func ExamplesORM() {
 	end := time.Now()
 	fmt.Println(end.Sub(start))
 
-	model, ok := query.NewQuery[UserTest]().Find(2)
+	model, ok := query.NewQuery[UserTest]().Find(3)
 
 	if ok {
 		fmt.Println(model)
 	}
+
+	query.NewQuery[UserTest]().Where("name", "like", "%Garry%").Delete()
+	query.NewQuery[UserTest]().DeleteById(1)
+
+	start = time.Now()
+	fmt.Println()
+	q2 := query.NewQuery[UserTest]().
+		Build().
+		Get()
+	fmt.Println(q2)
+	end = time.Now()
+	fmt.Println(end.Sub(start))
 
 }
