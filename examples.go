@@ -272,4 +272,5 @@ func ExamplesORM() {
 	end = time.Now()
 	fmt.Println(end.Sub(start))
 
+	// query.NewQuery[UserTest]().Using("posts p", "profiles pr").Where("p.name", "like", "%A%").Delete()
 }

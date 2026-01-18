@@ -27,8 +27,8 @@ func (q *Query[T]) From(table string) *Query[T] {
 	return q
 }
 
-func (q *Query[T]) Using(table string) *Query[T] {
-	q.usingExp = fmt.Sprintf(`Using "%s"`, table)
+func (q *Query[T]) Using(tables ...string) *Query[T] {
+	q.usingExp = strings.Join(tables, ", ")
 	return q
 }
 

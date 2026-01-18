@@ -63,7 +63,7 @@ func (q *Query[T]) appendExpressions() {
 	}
 
 	if q.usingExp != "" {
-		q.fullStatement += " " + strings.Trim(q.usingExp, " ")
+		q.fullStatement += " USING " + strings.Trim(q.usingExp, " ")
 		q.fullStatement = strings.Trim(q.fullStatement, " ")
 	}
 
