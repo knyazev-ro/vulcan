@@ -209,12 +209,12 @@ func ExamplesORM() {
 	}
 
 	type UserTest struct {
-		_    string `type:"metadata" table:"users" pk:"id"`
-		Id   int64  `type:"column" col:"id"`
-		Name string `type:"column" col:"name"`
-		// LastName string `type:"column" col:"last_name"`
-		// Posts    []PostTest `type:"relation" table:"posts" reltype:"has-many" fk:"user_id"`
-		// Profile  ProfileTest `type:"relation" table:"profiles" reltype:"has-one" fk:"user_id"`
+		_        string      `type:"metadata" table:"users" pk:"id"`
+		Id       int64       `type:"column" col:"id"`
+		Name     string      `type:"column" col:"name"`
+		LastName string      `type:"column" col:"last_name"`
+		Posts    []PostTest  `type:"relation" table:"posts" reltype:"has-many" fk:"user_id"`
+		Profile  ProfileTest `type:"relation" table:"profiles" reltype:"has-one" fk:"user_id"`
 	}
 
 	type DefUserTest struct {
