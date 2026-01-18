@@ -64,11 +64,23 @@ func (q *Query[T]) recHydration(data []map[string]any, i reflect.Value) []reflec
 
 				// int64
 				if field.Kind() == reflect.Int64 {
-					field.SetInt(first[colKey].(int64))
+					switch v := first[colKey].(type) {
+					case int64:
+						field.SetInt(v)
+					case int: // на случай, если значение int
+						field.SetInt(int64(v))
+					default:
+						field.SetInt(0) // если тип не подходит
+					}
 				}
 				// string
 				if field.Kind() == reflect.String {
-					field.SetString(first[colKey].(string))
+					switch v := first[colKey].(type) {
+					case string:
+						field.SetString(string(v))
+					default:
+						field.SetString("") // если тип не подходит
+					}
 				}
 
 			}

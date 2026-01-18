@@ -58,7 +58,8 @@ func (q *Query[T]) OrWhereClause(clause func(*Query[T])) *Query[T] {
 
 // return Model and bool - true - exists, false - not
 func (q *Query[T]) FindById(id int64) (T, bool) {
-	q.Where("id", "=", id)
+	Id := fmt.Sprintf("%s.id", q.Model.TableName)
+	q.Where(Id, "=", id)
 	q.Build()
 	q.SQL()
 	Ts := q.Get()

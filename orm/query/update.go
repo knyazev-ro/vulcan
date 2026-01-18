@@ -24,11 +24,11 @@ func (q *Query[T]) Update(values map[string]any) bool {
 	q.Bindings = append(binds, q.Bindings...)
 
 	setsStr := strings.Join(sets, ", ")
+	q.joinExp = ""
 	q.fullStatement = fmt.Sprintf(`UPDATE "%s" SET %s`, q.Model.TableName, setsStr) + " " + q.fullStatement
 	q.appendExpressions()
 	q.fillBindingsPSQL()
-	q.SQL()
-
+	fmt.Println(q.SQL())
 	db := db.DB // предполагаем, что db.DB — это *sql.DB
 	res, err := db.Exec(q.fullStatement, q.Bindings...)
 	if err != nil {

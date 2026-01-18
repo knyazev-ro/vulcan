@@ -7,6 +7,7 @@ import (
 )
 
 func (q *Query[T]) Delete() bool {
+	q.joinExp = ""
 	q.fullStatement = fmt.Sprintf(`DELETE FROM %s`, q.Model.TableName)
 	q.appendExpressions()
 	q.fillBindingsPSQL()

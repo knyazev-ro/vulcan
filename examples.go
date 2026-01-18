@@ -234,23 +234,26 @@ func ExamplesORM() {
 	}
 
 	query.NewQuery[UserTest]().Where("name", "like", "Bobby").Update(map[string]any{
-		"name": "DuranDuran",
+		"name":      "Duran",
+		"last_name": "Duran",
 	})
 
 	query.NewQuery[UserTest]().Create(map[string]any{
-		"name": "Garry",
+		"name":      "Garry",
+		"last_name": "Debrua",
 	})
 
 	query.NewQuery[UserTest]().Create(map[string]any{
-		"name": "Bobby",
+		"name":      "Bobby",
+		"last_name": "Fisher",
 	})
 
 	start := time.Now()
 	fmt.Println()
-	q1 := query.NewQuery[UserTest]().
+	query.NewQuery[UserTest]().
 		Build().
 		Get()
-	fmt.Println(q1)
+	// fmt.Println(q1)
 	end := time.Now()
 	fmt.Println(end.Sub(start))
 
@@ -260,15 +263,15 @@ func ExamplesORM() {
 		fmt.Println(model)
 	}
 
-	query.NewQuery[UserTest]().Where("name", "like", "%Garry%").Delete()
+	query.NewQuery[UserTest]().Where("users.name", "like", "%Garry%").Delete()
 	query.NewQuery[UserTest]().DeleteById(1)
 
 	start = time.Now()
 	fmt.Println()
-	q2 := query.NewQuery[UserTest]().
+	query.NewQuery[UserTest]().
 		Build().
 		Get()
-	fmt.Println(q2)
+	// fmt.Println(q2)
 	end = time.Now()
 	fmt.Println(end.Sub(start))
 
