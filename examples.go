@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/knyazev-ro/vulcan/orm/model"
 	"github.com/knyazev-ro/vulcan/orm/query"
@@ -190,12 +191,12 @@ func ExamplesORM() {
 	}
 
 	type UserTest struct {
-		_        string      `type:"metadata" table:"users" pk:"id"`
-		Id       int64       `type:"column" col:"id"`
-		Name     string      `type:"column" col:"name"`
-		LastName string      `type:"column" col:"last_name"`
-		Posts    []PostTest  `type:"relation" table:"posts" reltype:"has-many" fk:"user_id"`
-		Profile  ProfileTest `type:"relation" table:"profiles" reltype:"has-one" fk:"user_id"`
+		_        string     `type:"metadata" table:"users" pk:"id"`
+		Id       int64      `type:"column" col:"id"`
+		Name     string     `type:"column" col:"name"`
+		LastName string     `type:"column" col:"last_name"`
+		Posts    []PostTest `type:"relation" table:"posts" reltype:"has-many" fk:"user_id"`
+		// Profile  ProfileTest `type:"relation" table:"profiles" reltype:"has-one" fk:"user_id"`
 	}
 
 	type DefUserTest struct {
@@ -214,14 +215,12 @@ func ExamplesORM() {
 		User   DefUserTest `type:"relation" table:"users" reltype:"belongs-to" fk:"user_id" originalkey:"id"`
 	}
 
-	q1 := query.NewQuery[UserTest]().
+	start := time.Now()
+	fmt.Println()
+	query.NewQuery[UserTest]().
 		Build().
 		Get()
-	fmt.Println(q1)
-	fmt.Println(q1[0].Id)
-
-	q2 := query.NewQuery[MainProfileTest]().
-		Build().
-		Get()
-	fmt.Println(q2)
+	// fmt.Println(q1)
+	end := time.Now()
+	fmt.Println(end.Sub(start))
 }

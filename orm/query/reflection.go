@@ -121,7 +121,6 @@ func (q *Query[T]) Get() []T {
 		for i, col := range cols {
 			colsMap[col] = colValues[i]
 		}
-		// fmt.Println(colsMap)
 		mapData = append(mapData, colsMap)
 	}
 
