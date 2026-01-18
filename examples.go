@@ -254,7 +254,7 @@ func ExamplesORM() {
 	end := time.Now()
 	fmt.Println(end.Sub(start))
 
-	model, ok := query.NewQuery[UserTest]().Find(3)
+	model, ok := query.NewQuery[UserTest]().FindById(3)
 
 	if ok {
 		fmt.Println(model)
