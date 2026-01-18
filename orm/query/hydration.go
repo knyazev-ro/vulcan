@@ -108,18 +108,8 @@ func (q *Query[T]) recHydration(data []map[string]any, i reflect.Value) []reflec
 	return structData
 }
 
-func (q *Query[T]) HydrationOneToOne(data []map[string]any) []T {
-
-	return []T{}
-}
-
-func (q *Query[T]) HydrationHasMany(data []map[string]any) []T {
+func (q *Query[T]) Hydration(data []map[string]any) []T {
 	var m T
 	total := q.recHydration(data, reflect.ValueOf(&m))
 	return q.reflectSliceToSlice(total)
-}
-
-func (q *Query[T]) HydrationManyToMany(data []map[string]any) []T {
-
-	return []T{}
 }

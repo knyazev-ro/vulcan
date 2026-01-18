@@ -124,5 +124,5 @@ func (q *Query[T]) Get() []T {
 		mapData = append(mapData, colsMap)
 	}
 
-	return q.HydrationHasMany(mapData)
+	return q.Hydration(mapData)
 }
