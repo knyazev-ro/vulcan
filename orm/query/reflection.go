@@ -1,12 +1,11 @@
 package query
 
 import (
-	"database/sql"
 	"fmt"
 	"reflect"
 
-	"github.com/knyazev-ro/vulcan/config"
 	"github.com/knyazev-ro/vulcan/orm/consts"
+	"github.com/knyazev-ro/vulcan/orm/db"
 	"github.com/knyazev-ro/vulcan/orm/model"
 )
 
@@ -81,19 +80,7 @@ func (q *Query[T]) MSelect(i interface{}) *Query[T] {
 }
 
 func (q *Query[T]) Get() []T {
-	config := config.GetConfig()
-	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/%s", config.Driver, config.User, config.Password, config.Host, config.Port, config.Database)
-
-	db, err := sql.Open("pgx", dsn) // pgx через database/sql
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	// Проверяем соединение
-	if err := db.Ping(); err != nil {
-		panic(err)
-	}
+	db := db.DB
 	println(q.SQL())
 	rows, err := db.Query(q.fullStatement, q.Bindings...)
 	if err != nil {

@@ -10,13 +10,23 @@ type Config struct {
 	Database string
 }
 
+var Cfg *Config
+
+func SetConfig(c *Config) {
+	Cfg = c
+}
+
 func GetConfig() *Config {
-	return &Config{
-		Driver:   "postgres",
-		User:     "postgres",
-		Password: "123",
-		Host:     "localhost",
-		Port:     "5432",
-		Database: "vulcan_test",
+	if Cfg == nil {
+		return &Config{
+			Driver:   "postgres",
+			User:     "postgres",
+			Password: "123",
+			Host:     "localhost",
+			Port:     "5432",
+			Database: "vulcan_test",
+		}
+	} else {
+		return Cfg
 	}
 }
