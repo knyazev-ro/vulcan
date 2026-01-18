@@ -22,141 +22,131 @@ func NewUser() *User {
 }
 
 func ExamplesQuery() {
-	// user := NewUser()
+	type UserTest struct {
+		_        string `type:"metadata" table:"users" pk:"id"`
+		Id       int64  `type:"column" col:"id"`
+		Name     string `type:"column" col:"name"`
+		LastName string `type:"column" col:"last_name"`
+	}
 
-	// query.NewQuery(user.model).
-	// 	Select([]string{"id", "name"}).
-	// 	OrderBy([]string{"id"}, "desc").
-	// 	Build().
-	// 	Get()
+	query.NewQuery[UserTest]().
+		OrderBy([]string{"id"}, "desc").
+		Build().
+		Get()
 
-	// query.NewQuery(user.model).
-	// 	Select([]string{"id", "name"}).
-	// 	Where("id", ">", 1).
-	// 	Where("id", "!=", 3).
-	// 	Build().
-	// 	Get()
+	query.NewQuery[UserTest]().
+		Where("id", ">", 1).
+		Where("id", "!=", 3).
+		Build().
+		Get()
 
-	// query.NewQuery(user.model).
-	// 	From("posts").
-	// 	On("posts.id", "=", "users.post_id").
-	// 	Where("users.id", "=", 10).
-	// 	Where("users.active", "=", 1).
-	// 	Where("posts.name", "=", "agartha").
-	// 	LeftJoin("categories", func(jc *query.Join) {
-	// 		jc.On("categories.id", "=", "posts.category_id")
-	// 	}).
-	// 	Where("categories.name", "like", "%A%").
-	// 	Update(map[string]any{
-	// 		"users.role_id":  1,
-	// 		"users.owner_id": 2,
-	// 	})
+	query.NewQuery[UserTest]().
+		From("posts").
+		On("posts.id", "=", "users.post_id").
+		Where("users.id", "=", 10).
+		Where("users.active", "=", 1).
+		Where("posts.name", "=", "agartha").
+		LeftJoin("categories", func(jc *query.Join) {
+			jc.On("categories.id", "=", "posts.category_id")
+		}).
+		Where("categories.name", "like", "%A%").
+		Update(map[string]any{
+			"users.role_id":  1,
+			"users.owner_id": 2,
+		})
 
-	// query.NewQuery(user.model).
-	// 	Select([]string{"id", "email"}).
-	// 	Where("id", "=", 10).
-	// 	Where("active", "=", 1).
-	// 	Build().
-	// 	SQL()
+	query.NewQuery[UserTest]().
+		Where("role", "=", "admin").
+		OrWhere("role", "=", "moderator").
+		Build().
+		SQL()
 
-	// query.NewQuery(user.model).
-	// 	Select([]string{"id"}).
-	// 	Where("role", "=", "admin").
-	// 	OrWhere("role", "=", "moderator").
-	// 	Build().
-	// 	SQL()
+	query.NewQuery[UserTest]().
+		Where("a", "=", 1).
+		OrWhere("b", "=", 2).
+		Where("c", "=", 3).
+		Build().
+		SQL()
 
-	// query.NewQuery(user.model).
-	// 	Select([]string{"id"}).
-	// 	Where("a", "=", 1).
-	// 	OrWhere("b", "=", 2).
-	// 	Where("c", "=", 3).
-	// 	Build().
-	// 	SQL()
+	query.NewQuery[UserTest]().
+		Where("status", "=", 1).
+		WhereClause(func(q *query.Query[UserTest]) {
+			q.
+				Where("age", ">", 18).
+				OrWhereClause(func(q *query.Query[UserTest]) {
+					q.
+						Where("role", "=", "admin").
+						Where("last_login", ">", "2026-01-01")
+				})
+		}).
+		Where("active", "=", 1).
+		Build().
+		SQL()
 
-	// query.NewQuery(user.model).
-	// 	Select([]string{"id", "name"}).
-	// 	Where("status", "=", 1).
-	// 	WhereClause(func(q *query.Query) {
-	// 		q.
-	// 			Where("age", ">", 18).
-	// 			OrWhereClause(func(q *query.Query) {
-	// 				q.
-	// 					Where("role", "=", "admin").
-	// 					Where("last_login", ">", "2026-01-01")
-	// 			})
-	// 	}).
-	// 	Where("active", "=", 1).
-	// 	Build().
-	// 	SQL()
+	query.NewQuery[UserTest]().
+		WhereClause(func(q *query.Query[UserTest]) {
+			q.
+				Where("a", "=", 1).
+				OrWhereClause(func(q *query.Query[UserTest]) {
+					q.
+						Where("b", "=", 2).
+						Where("c", "=", 3)
+				})
+		}).
+		Build().
+		SQL()
 
-	// query.NewQuery(user.model).
-	// 	Select([]string{"id"}).
-	// 	WhereClause(func(q *query.Query) {
-	// 		q.
-	// 			Where("a", "=", 1).
-	// 			OrWhereClause(func(q *query.Query) {
-	// 				q.
-	// 					Where("b", "=", 2).
-	// 					Where("c", "=", 3)
-	// 			})
-	// 	}).
-	// 	Build().
-	// 	SQL()
+	query.NewQuery[UserTest]().
+		OrderBy([]string{"id"}, "asc").
+		Build().
+		SQL()
 
-	// query.NewQuery(user.model).
-	// 	Select([]string{"id"}).
-	// 	OrderBy([]string{"id"}, "asc").
-	// 	Build().
-	// 	SQL()
+	query.NewQuery[UserTest]().
+		Create(map[string]string{
+			"name":      "John",
+			"last_name": "Johanson",
+		})
 
-	// query.NewQuery(user.model).
-	// 	Create(map[string]string{
-	// 		"name":  "John",
-	// 		"email": "john@mail.com",
-	// 	})
+	q := query.NewQuery[UserTest]().
+		InnerJoin("posts", func(jc *query.Join) {
+			jc.On("posts.user_id", "=", "users.id")
+		}).
+		LeftJoin("categories", func(jc *query.Join) {
+			jc.On("categories.id", "=", "posts.category_id")
+		}).
+		LeftJoin("comments", func(jc *query.Join) {
+			jc.On("comments.post_id", "=", "posts.id")
+		}).
+		Where("users.active", "=", 1).
+		WhereClause(func(q *query.Query[UserTest]) {
+			q.Where("users.status", "=", "premium").
+				OrWhereClause(func(q *query.Query[UserTest]) {
+					q.Where("users.role", "=", "admin").
+						WhereClause(func(q *query.Query[UserTest]) {
+							q.Where("users.age", ">", 30).
+								OrWhere("users.signup_date", ">", "2025-01-01")
+						})
+				})
+		}).
+		Where("posts.published", "=", 1).
+		WhereClause(func(q *query.Query[UserTest]) {
+			q.Where("categories.name", "like", "%Tech%").
+				OrWhere("categories.name", "like", "%Science%")
+		}).
+		WhereClause(func(q *query.Query[UserTest]) {
+			q.Where("comments.approved", "=", 1).
+				OrWhere("comments.content", "like", "%important%")
+		}).
+		Where("posts.views", ">", 1000).
+		OrderBy([]string{"users.id", "posts.id"}, "desc"). // В процессе переработки
+		Limit(50).
+		Offset(10)
 
-	// q := query.NewQuery(user.model).
-	// 	Select([]string{"users.id", "users.name", "posts.title", "categories.name", "comments.content"}).
-	// 	InnerJoin("posts", func(jc *query.Join) {
-	// 		jc.On("posts.user_id", "=", "users.id")
-	// 	}).
-	// 	LeftJoin("categories", func(jc *query.Join) {
-	// 		jc.On("categories.id", "=", "posts.category_id")
-	// 	}).
-	// 	LeftJoin("comments", func(jc *query.Join) {
-	// 		jc.On("comments.post_id", "=", "posts.id")
-	// 	}).
-	// 	Where("users.active", "=", 1).
-	// 	WhereClause(func(q *query.Query) {
-	// 		q.Where("users.status", "=", "premium").
-	// 			OrWhereClause(func(q *query.Query) {
-	// 				q.Where("users.role", "=", "admin").
-	// 					WhereClause(func(q *query.Query) {
-	// 						q.Where("users.age", ">", 30).
-	// 							OrWhere("users.signup_date", ">", "2025-01-01")
-	// 					})
-	// 			})
-	// 	}).
-	// 	Where("posts.published", "=", 1).
-	// 	WhereClause(func(q *query.Query) {
-	// 		q.Where("categories.name", "like", "%Tech%").
-	// 			OrWhere("categories.name", "like", "%Science%")
-	// 	}).
-	// 	WhereClause(func(q *query.Query) {
-	// 		q.Where("comments.approved", "=", 1).
-	// 			OrWhere("comments.content", "like", "%important%")
-	// 	}).
-	// 	Where("posts.views", ">", 1000).
-	// 	OrderBy([]string{"users.id", "posts.id"}, "desc").
-	// 	Limit(50).
-	// 	Offset(10)
+	sql := q.Build().SQL()
+	bindings := q.Bindings
 
-	// sql := q.Build().SQL()
-	// bindings := q.Bindings
-
-	// fmt.Println("SQL:", sql)
-	// fmt.Println("Bindings:", bindings)
+	fmt.Println("SQL:", sql)
+	fmt.Println("Bindings:", bindings)
 }
 
 func ExamplesORM() {
