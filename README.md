@@ -1,4 +1,4 @@
-# Vulcan ORM
+# **Vulcan ORM**
 
 **Vulcan ORM** — это SQL query builder + struct based ORM для Go с синтаксисом, вдохновлённым Laravel Query Builder. Проект является частью фреймворка **Gerard** и предназначен для безопасной, предсказуемой и детерминированной генерации SQL-запросов с поддержкой вложенных условий, join-операций, биндингов и работы с PostgreSQL.
 
@@ -15,13 +15,36 @@
 * PostgreSQL placeholders (`$1`, `$2`, …)
 * Интеграция с `database/sql`
 
-## Пример использования
+
+## ORM-возможности (в разработке)
+
+Vulcan включает экспериментальный ORM-уровень:
+
+* Автоматическая генерация `SELECT` на основе структуры
+* Поддержка relations:
+
+  * `has-many`
+  * `belongs-to`
+  * `has-one`
+  * `many-to-many` (через pivot-таблицу)
+* Автоматическая генерация `JOIN` по тегам структуры
+* Рекурсивная гидратация вложенных структур
+* Группировка плоских SQL-строк в иерархические Go-объекты
+
+
+## Базовый пример (новый API)
+
+Вместо передачи `user.model` теперь используется **дженерик**:
 
 ```go
-user := NewUser()
+type UserTest struct {
+    _        string `type:"metadata" table:"users" pk:"id"`
+    Id       int64  `type:"column" col:"id"`
+    Name     string `type:"column" col:"name"`
+    LastName string `type:"column" col:"last_name"`
+}
 
-query.NewQuery(user.model).
-    Select([]string{"id", "name"}).
+query.NewQuery[UserTest]().
     Where("id", ">", 1).
     Where("id", "!=", 3).
     OrderBy([]string{"id"}, "desc").
@@ -29,15 +52,20 @@ query.NewQuery(user.model).
     Get()
 ```
 
+ `Select` теперь опционален — по умолчанию список колонок генерируется из структуры.
+
 Сгенерированный SQL:
 
 ```sql
-SELECT "id", "name" FROM users WHERE "id" > $1 AND "id" != $2 ORDER BY "id" DESC;
+SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name
+FROM users
+WHERE "users"."id" > $1 AND "users"."id" != $2
+ORDER BY "users"."id" DESC;
 ```
 
 Bindings:
 
-```text
+```
 [1, 3]
 ```
 
@@ -45,18 +73,17 @@ Bindings:
 
 ## Вложенные условия
 
-Для работы со скобками используется функциональный подход через `WhereClause` и `OrWhereClause`:
-
 ```go
-query.NewQuery(user.model).
-    Select([]string{"id"}).
+query.NewQuery[UserTest]().
     Where("status", "=", 1).
-    WhereClause(func(q *query.Query) {
-        q.Where("age", ">", 18).
-          OrWhereClause(func(q *query.Query) {
-              q.Where("role", "=", "admin").
-                Where("last_login", ">", "2026-01-01")
-          })
+    WhereClause(func(q *query.Query[UserTest]) {
+        q.
+            Where("age", ">", 18).
+            OrWhereClause(func(q *query.Query[UserTest]) {
+                q.
+                    Where("role", "=", "admin").
+                    Where("last_login", ">", "2026-01-01")
+            })
     }).
     Where("active", "=", 1).
     Build().
@@ -66,25 +93,25 @@ query.NewQuery(user.model).
 Результат:
 
 ```sql
-SELECT "id" FROM users
-WHERE "status" = $1 AND ("age" > $2 OR ("role" = $3 AND "last_login" > $4)) AND "active" = $5;
+SELECT "users"."id"
+FROM users
+WHERE "status" = $1
+AND ("age" > $2 OR ("role" = $3 AND "last_login" > $4))
+AND "active" = $5;
 ```
 
 Bindings:
 
-```text
+```
 [1, 18, "admin", "2026-01-01", 1]
 ```
 
 ---
 
-## JOIN
-
-Поддерживаются `INNER JOIN` и `LEFT JOIN` с кастомными `On`-условиями:
+## JOIN (ручный режим)
 
 ```go
-q := query.NewQuery(user.model).
-    Select([]string{"users.id", "posts.title", "categories.name"}).
+q := query.NewQuery[UserTest]().
     InnerJoin("posts", func(jc *query.Join) {
         jc.On("posts.user_id", "=", "users.id")
     }).
@@ -99,7 +126,7 @@ q := query.NewQuery(user.model).
 Результат:
 
 ```sql
-SELECT "users.id", "posts.title", "categories.name"
+SELECT ...
 FROM users
 INNER JOIN posts ON posts.user_id = users.id
 LEFT JOIN categories ON categories.id = posts.category_id
@@ -108,12 +135,75 @@ WHERE "users.active" = $1;
 
 ---
 
-## UPDATE
+## ORM Relations (автоматические JOIN)
 
-Пример обновления данных с join и вложенными условиями:
+Vulcan может автоматически строить JOIN на основе тегов структуры.
+
+### Пример: One-to-Many + Many-to-Many
 
 ```go
-query.NewQuery(user.model).
+type TagTest struct {
+    _    string `type:"metadata" table:"tags" pk:"id"`
+    Id   int64  `type:"column" col:"id"`
+    Name string `type:"column" col:"name"`
+}
+
+type PostTag struct {
+    _      string  `type:"metadata" table:"post_tags" pk:"post_id,tag_id" tabletype:"pivot"`
+    PostId int64   `type:"column" col:"post_id"`
+    TagId  int64   `type:"column" col:"tag_id"`
+    Tag    TagTest `type:"relation" table:"tags" reltype:"belongs-to" fk:"tag_id" originalkey:"id"`
+}
+
+type PostTest struct {
+    _        string    `type:"metadata" table:"posts" pk:"id"`
+    Id       int64     `type:"column" col:"id"`
+    Name     string    `type:"column" col:"name"`
+    UserId   int64     `type:"column" col:"user_id"`
+    PostTags []PostTag `type:"relation" table:"post_tags" reltype:"has-many" fk:"post_id"`
+}
+
+type UserTest struct {
+    _        string     `type:"metadata" table:"users" pk:"id"`
+    Id       int64      `type:"column" col:"id"`
+    Name     string     `type:"column" col:"name"`
+    LastName string     `type:"column" col:"last_name"`
+    Posts    []PostTest `type:"relation" table:"posts" reltype:"has-many" fk:"user_id"`
+}
+```
+
+Запрос:
+
+```go
+query.NewQuery[UserTest]().
+    Build().
+    Get()
+```
+
+Vulcan автоматически сгенерирует:
+
+```
+users
+LEFT JOIN posts
+LEFT JOIN post_tags
+LEFT JOIN tags
+```
+
+И соберёт результат в вложенные структуры:
+
+```
+User
+ └── Posts
+      └── PostTags
+           └── Tag
+```
+
+---
+
+## 🔹 UPDATE с JOIN
+
+```go
+query.NewQuery[UserTest]().
     From("posts").
     On("posts.id", "=", "users.post_id").
     Where("users.id", "=", 10).
@@ -134,18 +224,20 @@ UPDATE users
 SET users.role_id = $1, users.owner_id = $2
 FROM posts
 LEFT JOIN categories ON categories.id = posts.category_id
-WHERE posts.id = users.post_id AND users.id = $3 AND categories.name LIKE $4;
+WHERE posts.id = users.post_id
+AND users.id = $3
+AND categories.name LIKE $4;
 ```
 
 Bindings:
 
-```text
+```
 [1, 2, 10, "%Tech%"]
 ```
 
 ---
 
-## Контракт данных (важно)
+## Контракт данных
 
 Ключевой архитектурный принцип Vulcan заключается в том, что **структуры сущностей являются контрактом выходных данных**.
 
