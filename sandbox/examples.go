@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/knyazev-ro/vulcan/orm/model"
-	"github.com/knyazev-ro/vulcan/orm/query"
+	"github.com/knyazev-ro/vulcan/orm/vulcan"
 )
 
 type User struct {
@@ -57,24 +57,24 @@ func ExamplesQuery() {
 		Posts    []PostTest `type:"relation" table:"posts" reltype:"has-many" fk:"user_id"`
 	}
 
-	query.NewQuery[UserTest]().
+	vulcan.NewQuery[UserTest]().
 		OrderBy([]string{"id"}, "desc").
 		Build().
 		Get()
 
-	query.NewQuery[UserTest]().
+	vulcan.NewQuery[UserTest]().
 		Where("id", ">", 1).
 		Where("id", "!=", 3).
 		Build().
 		Get()
 
-	query.NewQuery[UserTest]().
+	vulcan.NewQuery[UserTest]().
 		From("posts").
 		On("posts.id", "=", "users.post_id").
 		Where("users.id", "=", 10).
 		Where("users.active", "=", 1).
 		Where("posts.name", "=", "agartha").
-		LeftJoin("categories", func(jc *query.Join) {
+		LeftJoin("categories", func(jc *vulcan.Join) {
 			jc.On("categories.id", "=", "posts.category_id")
 		}).
 		Where("categories.name", "like", "%A%").
@@ -83,25 +83,25 @@ func ExamplesQuery() {
 			"users.owner_id": 2,
 		})
 
-	query.NewQuery[UserTest]().
+	vulcan.NewQuery[UserTest]().
 		Where("role", "=", "admin").
 		OrWhere("role", "=", "moderator").
 		Build().
 		SQL()
 
-	query.NewQuery[UserTest]().
+	vulcan.NewQuery[UserTest]().
 		Where("a", "=", 1).
 		OrWhere("b", "=", 2).
 		Where("c", "=", 3).
 		Build().
 		SQL()
 
-	query.NewQuery[UserTest]().
+	vulcan.NewQuery[UserTest]().
 		Where("status", "=", 1).
-		WhereClause(func(q *query.Query[UserTest]) {
+		WhereClause(func(q *vulcan.Query[UserTest]) {
 			q.
 				Where("age", ">", 18).
-				OrWhereClause(func(q *query.Query[UserTest]) {
+				OrWhereClause(func(q *vulcan.Query[UserTest]) {
 					q.
 						Where("role", "=", "admin").
 						Where("last_login", ">", "2026-01-01")
@@ -111,11 +111,11 @@ func ExamplesQuery() {
 		Build().
 		SQL()
 
-	query.NewQuery[UserTest]().
-		WhereClause(func(q *query.Query[UserTest]) {
+	vulcan.NewQuery[UserTest]().
+		WhereClause(func(q *vulcan.Query[UserTest]) {
 			q.
 				Where("a", "=", 1).
-				OrWhereClause(func(q *query.Query[UserTest]) {
+				OrWhereClause(func(q *vulcan.Query[UserTest]) {
 					q.
 						Where("b", "=", 2).
 						Where("c", "=", 3)
@@ -124,44 +124,44 @@ func ExamplesQuery() {
 		Build().
 		SQL()
 
-	query.NewQuery[UserTest]().
+	vulcan.NewQuery[UserTest]().
 		OrderBy([]string{"id"}, "asc").
 		Build().
 		SQL()
 
-	query.NewQuery[UserTest]().
+	vulcan.NewQuery[UserTest]().
 		Create(map[string]any{
 			"name":      "John",
 			"last_name": "Johanson",
 		})
 
-	q := query.NewQuery[UserTest]().
-		InnerJoin("posts", func(jc *query.Join) {
+	q := vulcan.NewQuery[UserTest]().
+		InnerJoin("posts", func(jc *vulcan.Join) {
 			jc.On("posts.user_id", "=", "users.id")
 		}).
-		LeftJoin("categories", func(jc *query.Join) {
+		LeftJoin("categories", func(jc *vulcan.Join) {
 			jc.On("categories.id", "=", "posts.category_id")
 		}).
-		LeftJoin("comments", func(jc *query.Join) {
+		LeftJoin("comments", func(jc *vulcan.Join) {
 			jc.On("comments.post_id", "=", "posts.id")
 		}).
 		Where("users.active", "=", 1).
-		WhereClause(func(q *query.Query[UserTest]) {
+		WhereClause(func(q *vulcan.Query[UserTest]) {
 			q.Where("users.status", "=", "premium").
-				OrWhereClause(func(q *query.Query[UserTest]) {
+				OrWhereClause(func(q *vulcan.Query[UserTest]) {
 					q.Where("users.role", "=", "admin").
-						WhereClause(func(q *query.Query[UserTest]) {
+						WhereClause(func(q *vulcan.Query[UserTest]) {
 							q.Where("users.age", ">", 30).
 								OrWhere("users.signup_date", ">", "2025-01-01")
 						})
 				})
 		}).
 		Where("posts.published", "=", 1).
-		WhereClause(func(q *query.Query[UserTest]) {
+		WhereClause(func(q *vulcan.Query[UserTest]) {
 			q.Where("categories.name", "like", "%Tech%").
 				OrWhere("categories.name", "like", "%Science%")
 		}).
-		WhereClause(func(q *query.Query[UserTest]) {
+		WhereClause(func(q *vulcan.Query[UserTest]) {
 			q.Where("comments.approved", "=", 1).
 				OrWhere("comments.content", "like", "%important%")
 		}).
@@ -233,47 +233,47 @@ func ExamplesORM() {
 		User   DefUserTest `type:"relation" table:"users" reltype:"belongs-to" fk:"user_id" originalkey:"id"`
 	}
 
-	query.NewQuery[UserTest]().Where("name", "like", "Bobby").Update(map[string]any{
+	vulcan.NewQuery[UserTest]().Where("name", "like", "Bobby").Update(map[string]any{
 		"name":      "Duran",
 		"last_name": "Duran",
 	})
 
-	query.NewQuery[UserTest]().Create(map[string]any{
+	vulcan.NewQuery[UserTest]().Create(map[string]any{
 		"name":      "Garry",
 		"last_name": "Debrua",
 	})
 
-	query.NewQuery[UserTest]().Create(map[string]any{
+	vulcan.NewQuery[UserTest]().Create(map[string]any{
 		"name":      "Bobby",
 		"last_name": "Fisher",
 	})
 
 	start := time.Now()
 	fmt.Println()
-	query.NewQuery[UserTest]().
+	vulcan.NewQuery[UserTest]().
 		Build().
 		Get()
 	// fmt.Println(q1)
 	end := time.Now()
 	fmt.Println(end.Sub(start))
 
-	model, ok := query.NewQuery[UserTest]().FindById(3)
+	model, ok := vulcan.NewQuery[UserTest]().FindById(3)
 
 	if ok {
 		fmt.Println(model)
 	}
 
-	query.NewQuery[UserTest]().Where("users.name", "like", "%Garry%").Delete()
-	query.NewQuery[UserTest]().DeleteById(1)
+	vulcan.NewQuery[UserTest]().Where("users.name", "like", "%Garry%").Delete()
+	vulcan.NewQuery[UserTest]().DeleteById(1)
 
 	start = time.Now()
 	fmt.Println()
-	query.NewQuery[UserTest]().
+	vulcan.NewQuery[UserTest]().
 		Build().
 		Get()
 	// fmt.Println(q2)
 	end = time.Now()
 	fmt.Println(end.Sub(start))
 
-	// query.NewQuery[UserTest]().Using("posts p", "profiles pr").Where("p.name", "like", "%A%").Delete()
+	// vulcan.NewQuery[UserTest]().Using("posts p", "profiles pr").Where("p.name", "like", "%A%").Delete()
 }

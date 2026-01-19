@@ -1,4 +1,4 @@
-package query
+package vulcan
 
 type InvalidStructError struct {
 	message string

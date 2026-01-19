@@ -1,6 +1,6 @@
 # **Vulcan ORM**
 
-**Vulcan ORM** — это SQL query builder + struct based ORM для Go с синтаксисом, вдохновлённым Laravel Query Builder. Проект является частью фреймворка **Gerard** и предназначен для безопасной, предсказуемой и детерминированной генерации SQL-запросов с поддержкой вложенных условий, join-операций, биндингов и работы с PostgreSQL.
+**Vulcan ORM** — это SQL vulcan builder + struct based ORM для Go с синтаксисом, вдохновлённым Laravel Query Builder. Проект является частью фреймворка **Gerard** и предназначен для безопасной, предсказуемой и детерминированной генерации SQL-запросов с поддержкой вложенных условий, join-операций, биндингов и работы с PostgreSQL.
 
 ## Поддерживаемые возможности
 
@@ -44,7 +44,7 @@ type UserTest struct {
     LastName string `type:"column" col:"last_name"`
 }
 
-query.NewQuery[UserTest]().
+vulcan.NewQuery[UserTest]().
     Where("id", ">", 1).
     Where("id", "!=", 3).
     OrderBy([]string{"id"}, "desc").
@@ -74,12 +74,12 @@ Bindings:
 ## Вложенные условия
 
 ```go
-query.NewQuery[UserTest]().
+vulcan.NewQuery[UserTest]().
     Where("status", "=", 1).
-    WhereClause(func(q *query.Query[UserTest]) {
+    WhereClause(func(q *vulcan.Query[UserTest]) {
         q.
             Where("age", ">", 18).
-            OrWhereClause(func(q *query.Query[UserTest]) {
+            OrWhereClause(func(q *vulcan.Query[UserTest]) {
                 q.
                     Where("role", "=", "admin").
                     Where("last_login", ">", "2026-01-01")
@@ -111,11 +111,11 @@ Bindings:
 ## JOIN (ручный режим)
 
 ```go
-q := query.NewQuery[UserTest]().
-    InnerJoin("posts", func(jc *query.Join) {
+q := vulcan.NewQuery[UserTest]().
+    InnerJoin("posts", func(jc *vulcan.Join) {
         jc.On("posts.user_id", "=", "users.id")
     }).
-    LeftJoin("categories", func(jc *query.Join) {
+    LeftJoin("categories", func(jc *vulcan.Join) {
         jc.On("categories.id", "=", "posts.category_id")
     }).
     Where("users.active", "=", 1).
@@ -175,7 +175,7 @@ type UserTest struct {
 Запрос:
 
 ```go
-query.NewQuery[UserTest]().
+vulcan.NewQuery[UserTest]().
     Build().
     Get()
 ```
@@ -203,11 +203,11 @@ User
 ## 🔹 UPDATE с JOIN
 
 ```go
-query.NewQuery[UserTest]().
+vulcan.NewQuery[UserTest]().
     From("posts").
     On("posts.id", "=", "users.post_id").
     Where("users.id", "=", 10).
-    LeftJoin("categories", func(jc *query.Join) {
+    LeftJoin("categories", func(jc *vulcan.Join) {
         jc.On("categories.id", "=", "posts.category_id")
     }).
     Where("categories.name", "like", "%Tech%").
