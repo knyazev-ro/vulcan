@@ -193,11 +193,11 @@ func ExamplesORM() {
 	}
 
 	type PostTest struct {
-		_        string    `type:"metadata" table:"posts" pk:"id"`
-		Id       int64     `type:"column" col:"id"`
-		Name     string    `type:"column" col:"name"`
-		UserId   int64     `type:"column" col:"user_id"`
-		PostTags []PostTag `type:"relation" table:"post_tags" reltype:"has-many" fk:"post_id"`
+		_      string `type:"metadata" table:"posts" pk:"id"`
+		Id     int64  `type:"column" col:"id"`
+		Name   string `type:"column" col:"name"`
+		UserId int64  `type:"column" col:"user_id"`
+		// PostTags []PostTag `type:"relation" table:"post_tags" reltype:"has-many" fk:"post_id"`
 	}
 
 	type ProfileTest struct {
@@ -209,12 +209,12 @@ func ExamplesORM() {
 	}
 
 	type UserTest struct {
-		_        string      `type:"metadata" table:"users" pk:"id"`
-		Id       int64       `type:"column" col:"id"`
-		Name     string      `type:"column" col:"name"`
-		LastName string      `type:"column" col:"last_name"`
-		Posts    []PostTest  `type:"relation" table:"posts" reltype:"has-many" fk:"user_id"`
-		Profile  ProfileTest `type:"relation" table:"profiles" reltype:"has-one" fk:"user_id"`
+		_        string     `type:"metadata" table:"users" pk:"id"`
+		Id       int64      `type:"column" col:"id"`
+		Name     string     `type:"column" col:"name"`
+		LastName string     `type:"column" col:"last_name"`
+		Posts    []PostTest `type:"relation" table:"posts" reltype:"has-many" fk:"user_id" originalkey:"id"`
+		// Profile  ProfileTest `type:"relation" table:"profiles" reltype:"has-one" fk:"user_id" originalkey:"id"`
 	}
 
 	type DefUserTest struct {
@@ -233,47 +233,45 @@ func ExamplesORM() {
 		User   DefUserTest `type:"relation" table:"users" reltype:"belongs-to" fk:"user_id" originalkey:"id"`
 	}
 
-	vulcan.NewQuery[UserTest]().Where("name", "like", "Bobby").Update(map[string]any{
-		"name":      "Duran",
-		"last_name": "Duran",
-	})
+	// vulcan.NewQuery[UserTest]().Where("name", "like", "Bobby").Update(map[string]any{
+	// 	"name":      "Duran",
+	// 	"last_name": "Duran",
+	// })
 
-	vulcan.NewQuery[UserTest]().Create(map[string]any{
-		"name":      "Garry",
-		"last_name": "Debrua",
-	})
+	// vulcan.NewQuery[UserTest]().Create(map[string]any{
+	// 	"name":      "Garry",
+	// 	"last_name": "Debrua",
+	// })
 
-	vulcan.NewQuery[UserTest]().Create(map[string]any{
-		"name":      "Bobby",
-		"last_name": "Fisher",
-	})
+	// vulcan.NewQuery[UserTest]().Create(map[string]any{
+	// 	"name":      "Bobby",
+	// 	"last_name": "Fisher",
+	// })
 
 	start := time.Now()
 	fmt.Println()
-	vulcan.NewQuery[UserTest]().
-		Build().
-		Get()
-	// fmt.Println(q1)
+	q1 := vulcan.NewQuery[UserTest]().Load()
+	fmt.Println(q1)
 	end := time.Now()
 	fmt.Println(end.Sub(start))
 
-	model, ok := vulcan.NewQuery[UserTest]().FindById(3)
+	// model, ok := vulcan.NewQuery[UserTest]().FindById(3)
 
-	if ok {
-		fmt.Println(model)
-	}
+	// if ok {
+	// 	fmt.Println(model)
+	// }
 
-	vulcan.NewQuery[UserTest]().Where("users.name", "like", "%Garry%").Delete()
-	vulcan.NewQuery[UserTest]().DeleteById(1)
+	// vulcan.NewQuery[UserTest]().Where("users.name", "like", "%Garry%").Delete()
+	// vulcan.NewQuery[UserTest]().DeleteById(1)
 
-	start = time.Now()
-	fmt.Println()
-	vulcan.NewQuery[UserTest]().
-		Build().
-		Get()
-	// fmt.Println(q2)
-	end = time.Now()
-	fmt.Println(end.Sub(start))
+	// start = time.Now()
+	// fmt.Println()
+	// vulcan.NewQuery[UserTest]().
+	// 	Build().
+	// 	Get()
+	// // fmt.Println(q2)
+	// end = time.Now()
+	// fmt.Println(end.Sub(start))
 
 	// vulcan.NewQuery[UserTest]().Using("posts p", "profiles pr").Where("p.name", "like", "%A%").Delete()
 }

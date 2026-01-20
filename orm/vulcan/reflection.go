@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/knyazev-ro/vulcan/orm/consts"
 	"github.com/knyazev-ro/vulcan/orm/db"
 	"github.com/knyazev-ro/vulcan/orm/model"
 )
@@ -16,50 +15,50 @@ func (q *Query[T]) recGenerateCols(i interface{}, cols []string) []string {
 	} else {
 		panic("Must be a struct")
 	}
-	pk := ""
-	TableName := ""
+	metadata, ok := val.Type().FieldByName("_")
+	if !ok {
+		panic("metadata is not found")
+	}
+	// pk := metadata.Tag.Get("pk")
+	TableName := metadata.Tag.Get("table")
+
 	for i := range val.NumField() {
-		field := val.Field(i)
+		// field := val.Field(i)
 		valueType := val.Type().Field(i)
 		typeTag := valueType.Tag.Get("type")
-
-		if typeTag == "metadata" {
-			TableName = valueType.Tag.Get("table")
-			pk = valueType.Tag.Get("pk")
-		}
 
 		if typeTag == "column" {
 			colTag := valueType.Tag.Get("col")
 			cols = append(cols, fmt.Sprintf(`"%s"."%s" AS %s_%s`, TableName, colTag, TableName, colTag))
 		}
 
-		if typeTag == "relation" {
-			relTypeTag := valueType.Tag.Get("reltype")
-			tableTag := valueType.Tag.Get("table")
-			fkTag := valueType.Tag.Get("fk")
-			originalKey := valueType.Tag.Get("originalkey")
-			// one to many
-			if relTypeTag == consts.HasMany && field.Kind() == reflect.Slice {
-				q.LeftJoin(tableTag, func(jc *Join) {
-					jc.On(fmt.Sprintf(`%s.%s`, tableTag, fkTag), "=", fmt.Sprintf(`%s.%s`, TableName, pk))
-				})
-				cols = q.recGenerateCols(reflect.New(field.Type().Elem()).Interface(), cols)
-			}
-			if relTypeTag == consts.BelongsTo && field.Kind() == reflect.Struct {
-				q.LeftJoin(tableTag, func(jc *Join) {
-					jc.On(fmt.Sprintf(`%s.%s`, tableTag, originalKey), "=", fmt.Sprintf(`%s.%s`, TableName, fkTag))
-				})
-				cols = q.recGenerateCols(reflect.New(field.Type()).Interface(), cols)
-			}
+		// if typeTag == "relation" {
+		// 	relTypeTag := valueType.Tag.Get("reltype")
+		// 	tableTag := valueType.Tag.Get("table")
+		// 	fkTag := valueType.Tag.Get("fk")
+		// 	originalKey := valueType.Tag.Get("originalkey")
+		// 	// one to many
+		// 	if relTypeTag == consts.HasMany && field.Kind() == reflect.Slice {
+		// 		q.LeftJoin(tableTag, func(jc *Join) {
+		// 			jc.On(fmt.Sprintf(`%s.%s`, tableTag, fkTag), "=", fmt.Sprintf(`%s.%s`, TableName, pk))
+		// 		})
+		// 		cols = q.recGenerateCols(reflect.New(field.Type().Elem()).Interface(), cols)
+		// 	}
+		// 	if relTypeTag == consts.BelongsTo && field.Kind() == reflect.Struct {
+		// 		q.LeftJoin(tableTag, func(jc *Join) {
+		// 			jc.On(fmt.Sprintf(`%s.%s`, tableTag, originalKey), "=", fmt.Sprintf(`%s.%s`, TableName, fkTag))
+		// 		})
+		// 		cols = q.recGenerateCols(reflect.New(field.Type()).Interface(), cols)
+		// 	}
 
-			if relTypeTag == consts.HasOne && field.Kind() == reflect.Struct {
-				q.LeftJoin(tableTag, func(jc *Join) {
-					jc.On(fmt.Sprintf(`%s.%s`, tableTag, fkTag), "=", fmt.Sprintf(`%s.%s`, TableName, pk))
-				})
-				cols = q.recGenerateCols(reflect.New(field.Type()).Interface(), cols)
-			}
+		// 	if relTypeTag == consts.HasOne && field.Kind() == reflect.Struct {
+		// 		q.LeftJoin(tableTag, func(jc *Join) {
+		// 			jc.On(fmt.Sprintf(`%s.%s`, tableTag, fkTag), "=", fmt.Sprintf(`%s.%s`, TableName, pk))
+		// 		})
+		// 		cols = q.recGenerateCols(reflect.New(field.Type()).Interface(), cols)
+		// 	}
 
-		}
+		// }
 	}
 	return cols
 }

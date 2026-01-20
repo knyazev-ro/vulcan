@@ -16,12 +16,10 @@ func (q *Query[T]) reflectSliceToSlice(v []reflect.Value) []T {
 	return data
 }
 
-func (q *Query[T]) getPk(modelType reflect.StructField) []string {
-	pk := modelType.Tag.Get("pk")
-	tableName := strings.Trim(modelType.Tag.Get("table"), " ")
+func (q *Query[T]) getPk(pk, table string) []string {
 	pkArr := []string{}
 	for _, k := range strings.Split(strings.Trim(pk, " "), ",") {
-		pkArr = append(pkArr, fmt.Sprintf("%s_%s", tableName, strings.Trim(k, " ")))
+		pkArr = append(pkArr, fmt.Sprintf("%s_%s", table, strings.Trim(k, " ")))
 	}
 	return pkArr
 }
@@ -33,9 +31,9 @@ func (q *Query[T]) recHydration(data []map[string]any, i reflect.Value) []reflec
 		panic("model metadata was not found")
 	}
 
-	pk := q.getPk(modelMetadata)
-
-	tableName := modelMetadata.Tag.Get("table")
+	pkStr := modelMetadata.Tag.Get("pk")
+	tableName := strings.Trim(modelMetadata.Tag.Get("table"), " ")
+	pk := q.getPk(pkStr, tableName)
 
 	mapByPk := map[string][]map[string]any{}
 	for _, row := range data {

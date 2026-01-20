@@ -2,6 +2,7 @@ package vulcan
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // драйвер для database/sql
@@ -28,6 +29,21 @@ func NewQuery[T any]() *Query[T] {
 	q := &Query[T]{}
 	var i T
 	q.MSelect(&i)
+	return q
+}
+
+func (q *Query[T]) SelectFromStruct(i interface{}) *Query[T] {
+	cols := q.recGenerateCols(i, []string{})
+	if len(cols) > 0 {
+		q.selectRaw(cols)
+	}
+	TName, ok := reflect.TypeOf(i).Elem().FieldByName("_")
+	if !ok {
+		panic("metadata is not found")
+	}
+	q.Model = model.Model{
+		TableName: TName.Tag.Get("table"),
+	}
 	return q
 }
 
