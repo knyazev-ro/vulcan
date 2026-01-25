@@ -21,7 +21,7 @@ func MapByKey(data []map[string]any, key string) map[any][]map[string]any {
 // Модель можно загрузить по схеме структуры в виде плоского MAP.
 func (q *Query[T]) LoadMap() ([]map[string]any, map[string][]any) {
 	q.Build()
-	fmt.Println(q.SQL())
+	// fmt.Println(q.SQL())
 	db := db.DB
 	rows, err := db.Query(q.fullStatement, q.Bindings...)
 	if err != nil {
