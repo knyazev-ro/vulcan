@@ -45,13 +45,11 @@ func ExamplesQuery() {
 
 	vulcan.NewQuery[UserTest]().
 		OrderBy([]string{"id"}, "desc").
-		Build().
 		Load()
 
 	vulcan.NewQuery[UserTest]().
 		Where("id", ">", 1).
 		Where("id", "!=", 3).
-		Build().
 		Load()
 
 	vulcan.NewQuery[UserTest]().
