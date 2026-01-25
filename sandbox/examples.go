@@ -4,22 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/knyazev-ro/vulcan/orm/model"
 	"github.com/knyazev-ro/vulcan/orm/vulcan"
 )
-
-type User struct {
-	model model.Model
-	Id    int `db:"Id"`
-}
-
-func NewUser() *User {
-	return &User{
-		model: model.Model{
-			TableName: "users",
-		},
-	}
-}
 
 func ExamplesQuery() {
 
@@ -60,13 +46,13 @@ func ExamplesQuery() {
 	vulcan.NewQuery[UserTest]().
 		OrderBy([]string{"id"}, "desc").
 		Build().
-		Get()
+		Load()
 
 	vulcan.NewQuery[UserTest]().
 		Where("id", ">", 1).
 		Where("id", "!=", 3).
 		Build().
-		Get()
+		Load()
 
 	vulcan.NewQuery[UserTest]().
 		From("posts").
@@ -250,9 +236,9 @@ func ExamplesORM() {
 
 	start := time.Now()
 	fmt.Println()
-	_ = vulcan.NewQuery[UserTest]().Load()
-	// fmt.Println(len(q1))
+	q1 := vulcan.NewQuery[UserTest]().Load()
 	end := time.Now()
+	fmt.Println(len(q1))
 	fmt.Println(end.Sub(start))
 
 	// model, ok := vulcan.NewQuery[UserTest]().FindById(3)
@@ -268,7 +254,7 @@ func ExamplesORM() {
 	// fmt.Println()
 	// vulcan.NewQuery[UserTest]().
 	// 	Build().
-	// 	Get()
+	// 	Load()
 	// // fmt.Println(q2)
 	// end = time.Now()
 	// fmt.Println(end.Sub(start))

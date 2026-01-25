@@ -6,5 +6,7 @@ import (
 
 func main() {
 	db.Init()
-	RealExampleORM()
+	// ExamplesQuery()
+	ExamplesORM()
+	// RealExampleORM()
 }

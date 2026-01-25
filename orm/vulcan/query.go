@@ -34,7 +34,7 @@ func NewQuery[T any]() *Query[T] {
 }
 
 func (q *Query[T]) SelectFromStruct(i interface{}) *Query[T] {
-	cols := q.recGenerateCols(i, []string{})
+	cols := q.generateCols(i, []string{})
 	if len(cols) > 0 {
 		q.selectRaw(cols)
 	}
