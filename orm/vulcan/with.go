@@ -18,31 +18,11 @@ func MapByKey(data []map[string]any, key string) map[any][]map[string]any {
 	return result
 }
 
-func (q *Query[T]) getMetadata(i interface{}) (string, string) {
-	val := reflect.ValueOf(&i).Elem()
-	if val.Kind() != reflect.Struct {
-		panic("getMetadata: T must be a struct type")
-	}
-	metadata, ok := val.Type().FieldByName("_")
-
-	if !ok {
-		panic("getMetadata: struct T must have a metadata field")
-	}
-
-	typeName := metadata.Tag.Get("type")
-	if typeName != "metadata" {
-		panic("getMetadata: struct T must have a metadata field with type:metadata tag")
-	}
-
-	table := metadata.Tag.Get("table")
-	pk := metadata.Tag.Get("pk")
-	return table, pk
-}
-
+// Модель можно загрузить по схеме структуры в виде плоского MAP.
 func (q *Query[T]) LoadMap() ([]map[string]any, map[string][]any) {
 	q.Build()
+	fmt.Println(q.SQL())
 	db := db.DB
-	println(q.SQL())
 	rows, err := db.Query(q.fullStatement, q.Bindings...)
 	if err != nil {
 		panic(err)
@@ -83,6 +63,7 @@ func (q *Query[T]) LoadMap() ([]map[string]any, map[string][]any) {
 	return mapData, pkMap
 }
 
+// Заполнение обычных полей, игнорирует заполнение полей-отношений
 func (q *Query[T]) fillCols(i interface{}, row map[string]any, TableName string) any {
 	val := reflect.ValueOf(i).Elem()
 	if val.Kind() != reflect.Struct {
@@ -138,7 +119,13 @@ func (q *Query[T]) fillCols(i interface{}, row map[string]any, TableName string)
 
 }
 
-func (q *Query[T]) groupManyByKey(data []reflect.Value, key string) map[any][]reflect.Value {
+// Группирует данные по ключу. Полезен для группировки по внешнему ключу, либо по собственному ключу сущности
+// Принимает ключ сущности по которому производится группировка и массив этих сущностей для операции
+func (q *Query[T]) groupByKey(data []reflect.Value, key string) map[any][]reflect.Value {
+	grouped := map[any][]reflect.Value{}
+	if len(data) <= 0 {
+		return grouped
+	}
 	example := data[0]
 	fieldName := ""
 	for i := 0; i < example.NumField(); i++ {
@@ -151,7 +138,6 @@ func (q *Query[T]) groupManyByKey(data []reflect.Value, key string) map[any][]re
 		fieldName = fieldType.Name
 	}
 
-	grouped := map[any][]reflect.Value{}
 	for _, d := range data {
 		f := d.FieldByName(fieldName)
 		grouped[f.Int()] = append(grouped[f.Int()], d)
@@ -159,6 +145,7 @@ func (q *Query[T]) groupManyByKey(data []reflect.Value, key string) map[any][]re
 	return grouped
 }
 
+// Вставляет массив в поле массив для отношений Имеет Много (HasMany)
 func (q *Query[T]) placeHasMany(parent []reflect.Value, grouped map[any][]reflect.Value, originalkey string, fieldName string) {
 	example := parent[0]
 	originalKeyFieldName := ""
@@ -190,6 +177,7 @@ func (q *Query[T]) placeHasMany(parent []reflect.Value, grouped map[any][]reflec
 	}
 }
 
+// Вставляет поле-структуру, реализует логику для HasOne
 func (q *Query[T]) placeHasOne(parent []reflect.Value, grouped map[any][]reflect.Value, originalkey string, fieldName string) {
 	example := parent[0]
 	originalKeyFieldName := ""
@@ -214,7 +202,9 @@ func (q *Query[T]) placeHasOne(parent []reflect.Value, grouped map[any][]reflect
 	}
 }
 
+// Вставляет поле-структуру, реализует логику для BelongsTo
 func (q *Query[T]) placeBelongsTo(parent []reflect.Value, grouped map[any][]reflect.Value, fk string, fieldName string) {
+	// Находим у сущности поле связывающее его с родителем
 	example := parent[0]
 	fkFieldName := ""
 	for i := 0; i < example.NumField(); i++ {
@@ -225,7 +215,8 @@ func (q *Query[T]) placeBelongsTo(parent []reflect.Value, grouped map[any][]refl
 		}
 		fkFieldName = fieldType.Name
 	}
-
+	// Сохраняем записи. Проходимся по ранее сгруппированным по ключу полям (id того, кто Владеет)
+	// Родитель, у которого совпадает поле внешний ключ с id того-кто-владеет записывает у себя эту сущность
 	for _, p := range parent {
 		fkId := p.FieldByName(fkFieldName).Int()
 		relatedArr := grouped[fkId]
@@ -239,6 +230,9 @@ func (q *Query[T]) placeBelongsTo(parent []reflect.Value, grouped map[any][]refl
 	}
 }
 
+// Умная гидрация. Умная, потому что тупая версия реализована была в первом прототипе, использовала LEFT JOIN для отношений
+// Умная версия использует WHERE ANY и группировку уже по ним. Хоть вместо 1 запроса будет N, где N - количество отношений в указанной структуре
+// Она все равно будет быстрее при малых запросах и феноменально быстрее при больших
 func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any, parentPkMap map[string][]any) []reflect.Value {
 
 	val := reflect.ValueOf(model).Elem()
@@ -252,6 +246,7 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 		panic("smartHydration: model must be a pointer to a struct")
 	}
 
+	// На этом этапе записываются не-relation поля и создаются сущности родителя, сразу в массив
 	structData := []reflect.Value{}
 	for _, row := range parentData {
 		newStruct := reflect.New(reflect.TypeOf(model).Elem()).Elem()
@@ -273,28 +268,62 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 
 		if tagType == "relation" {
 
+			// HasMany
 			if relType == consts.HasMany && relFieldValue.Kind() == reflect.Slice {
+				// Достаем тип структуры, создаем новую, как образец
 				relStructValue := reflect.New(relFieldValue.Type().Elem())
 				relStruct := relStructValue.Interface()
-				subQuery, subQueryPkMap := NewQuery[T]().SelectFromStruct(relStruct).WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap()
+				// Выполняем запрос в БД по получению полей.
+
+				whereHasClosure, ok := q.whereHasMap[relFieldType.Name]
+				query := NewQuery[T]().SelectFromStruct(relStruct)
+				if ok {
+					whereHasClosure(query)
+				}
+
+				subQuery, subQueryPkMap := query.WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap()
+				// Продолжаем рекурсию
 				data := q.smartHydration(relStruct, subQuery, subQueryPkMap)
-				dataGrouped := q.groupManyByKey(data, fk)
+				// Группируем данные
+				dataGrouped := q.groupByKey(data, fk)
+				// Выполняем вставку по полям родителя в соответсвующий relation в памяти
 				q.placeHasMany(structData, dataGrouped, originalKey, relFieldType.Name)
 			}
 
+			// HasOne
 			if relType == consts.HasOne && relFieldValue.Kind() == reflect.Struct {
 				relStruct := reflect.New(relFieldValue.Type()).Interface()
-				subQuery, subQueryPkMap := NewQuery[T]().SelectFromStruct(relStruct).WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap()
+
+				whereHasClosure, ok := q.whereHasMap[relFieldType.Name]
+				query := NewQuery[T]().SelectFromStruct(relStruct)
+				if ok {
+					whereHasClosure(query)
+				}
+
+				subQuery, subQueryPkMap := query.WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap()
 				data := q.smartHydration(relStruct, subQuery, subQueryPkMap)
-				dataGrouped := q.groupManyByKey(data, fk)
+				dataGrouped := q.groupByKey(data, fk)
 				q.placeHasOne(structData, dataGrouped, originalKey, relFieldType.Name)
 			}
 
+			// BelongsTo
 			if relType == consts.BelongsTo && relFieldValue.Kind() == reflect.Struct {
 				relStruct := reflect.New(relFieldValue.Type()).Interface()
-				subQuery, subQueryPkMap := NewQuery[T]().SelectFromStruct(relStruct).WhereAny(originalKey, parentPkMap[fmt.Sprintf("%s_%s", TableName, fk)]).LoadMap()
+
+				whereHasClosure, ok := q.whereHasMap[relFieldType.Name]
+				query := NewQuery[T]().SelectFromStruct(relStruct)
+				if ok {
+					whereHasClosure(query)
+				}
+
+				ids := []any{}
+				for _, p := range parentData {
+					key := fmt.Sprintf("%s_%s", TableName, fk)
+					ids = append(ids, p[key])
+				}
+				subQuery, subQueryPkMap := query.WhereAny(originalKey, ids).LoadMap()
 				data := q.smartHydration(relStruct, subQuery, subQueryPkMap)
-				dataGrouped := q.groupManyByKey(data, originalKey)
+				dataGrouped := q.groupByKey(data, originalKey)
 				q.placeBelongsTo(structData, dataGrouped, fk, relFieldType.Name)
 			}
 		}
@@ -309,4 +338,12 @@ func (q *Query[T]) Load() []T {
 	parentData, parentPkMap := q.LoadMap()
 	data := q.smartHydration(&model, parentData, parentPkMap)
 	return q.reflectSliceToSlice(data)
+}
+
+func (q *Query[T]) With(field string, closure func(*Query[T])) *Query[T] {
+	if q.whereHasMap == nil {
+		q.whereHasMap = make(map[string]func(*Query[T]))
+	}
+	q.whereHasMap[field] = closure
+	return q
 }

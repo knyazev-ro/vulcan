@@ -23,6 +23,7 @@ type Query[T any] struct {
 	limitExp      string
 	offsetExp     string
 	fullStatement string
+	whereHasMap   map[string]func(*Query[T])
 }
 
 func NewQuery[T any]() *Query[T] {
@@ -115,6 +116,7 @@ func (q *Query[T]) SQL() string {
 	return q.fullStatement
 }
 
+// опасно
 func (q *Query[T]) RawSQL(v string) *Query[T] {
 	q.fullStatement = v
 	return q

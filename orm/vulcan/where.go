@@ -74,6 +74,11 @@ func (q *Query[T]) WhereAny(col string, values []any) *Query[T] {
 
 	statement := fmt.Sprintf(`%s = ANY(?)`, col)
 	q.Bindings = append(q.Bindings, values)
+	boolVal := "AND"
+	if q.whereExp != "" && q.whereExp[len(q.whereExp)-1] != '(' {
+		statement = fmt.Sprintf(" %s %s", boolVal, statement)
+	}
+
 	q.whereExp += statement
 	return q
 }
@@ -82,9 +87,7 @@ func (q *Query[T]) WhereAny(col string, values []any) *Query[T] {
 func (q *Query[T]) FindById(id int64) (T, bool) {
 	Id := fmt.Sprintf("%s.id", q.Model.TableName)
 	q.Where(Id, "=", id)
-	q.Build()
-	q.SQL()
-	Ts := q.Get()
+	Ts := q.Load()
 	if len(Ts) >= 1 {
 		return Ts[0], true
 	}
