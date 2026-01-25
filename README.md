@@ -27,9 +27,9 @@ Vulcan включает экспериментальный ORM-уровень:
   * `belongs-to`
   * `has-one`
   * `many-to-many` (через pivot-таблицу)
-* Автоматическая генерация `JOIN` по тегам структуры
+* Автоматическая генерация Preload
 * Рекурсивная гидратация вложенных структур
-* Группировка плоских SQL-строк в иерархические Go-объекты
+* Группировка по вложенным запросам
 
 
 ## Базовый пример (новый API)
@@ -48,8 +48,7 @@ vulcan.NewQuery[UserTest]().
     Where("id", ">", 1).
     Where("id", "!=", 3).
     OrderBy([]string{"id"}, "desc").
-    Build().
-    Get()
+    Load()
 ```
 
  `Select` теперь опционален — по умолчанию список колонок генерируется из структуры.
@@ -110,6 +109,8 @@ Bindings:
 
 ## JOIN (ручный режим)
 
+В текущей версии, если требуется получить плоскую структуру, достаточно объявить одну структуру и там, где поля должны быть отображены из связанной таблицы - указать тег `table:<название таблицы>`
+
 ```go
 q := vulcan.NewQuery[UserTest]().
     InnerJoin("posts", func(jc *vulcan.Join) {
@@ -137,7 +138,7 @@ WHERE "users.active" = $1;
 
 ## ORM Relations (автоматические JOIN)
 
-Vulcan может автоматически строить JOIN на основе тегов структуры.
+Vulcan может автоматически строить подгружать связанные модели на основе вложенной структуры!
 
 ### Пример: One-to-Many + Many-to-Many
 
@@ -160,7 +161,7 @@ type PostTest struct {
     Id       int64     `type:"column" col:"id"`
     Name     string    `type:"column" col:"name"`
     UserId   int64     `type:"column" col:"user_id"`
-    PostTags []PostTag `type:"relation" table:"post_tags" reltype:"has-many" fk:"post_id"`
+    PostTags []PostTag `type:"relation" table:"post_tags" reltype:"has-many" fk:"post_id" originalkey:"id"`
 }
 
 type UserTest struct {
@@ -168,26 +169,17 @@ type UserTest struct {
     Id       int64      `type:"column" col:"id"`
     Name     string     `type:"column" col:"name"`
     LastName string     `type:"column" col:"last_name"`
-    Posts    []PostTest `type:"relation" table:"posts" reltype:"has-many" fk:"user_id"`
+    Posts    []PostTest `type:"relation" table:"posts" reltype:"has-many" fk:"user_id" originalkey:"id"`
 }
 ```
 
 Запрос:
 
 ```go
-vulcan.NewQuery[UserTest]().
-    Build().
-    Get()
+vulcan.NewQuery[UserTest]().Load()
 ```
 
-Vulcan автоматически сгенерирует:
-
-```
-users
-LEFT JOIN posts
-LEFT JOIN post_tags
-LEFT JOIN tags
-```
+Vulcan автоматически сгенерирует 4 запроса.
 
 И соберёт результат в вложенные структуры:
 
@@ -273,14 +265,21 @@ Bindings:
 
 ## Ограничения
 
-* Проект не является полноценным ORM в классическом смысле
-* Нет автоматического «магического» маппинга результатов в произвольные структуры
 * Нет поддержки множества SQL-диалектов — приоритет отдан PostgreSQL
 
 ---
 
+## Новые возможности
+
+Были добавлены такие методы, как `DeleteById`, `FindById` и, самое мощное в актуальной версии - поддержка мутации подзапросов `With`. На данный момент есть поддержка фильтрации отношений на уровне родительской структуры через замыкания. Название в первом аргументе должно совпадать с названием переменной в которую будет записано отношение в вашей структуре. Возможны вложенные With.
+```go
+	q2, _ := vulcan.NewQuery[ReportData]().With("City", func(q *vulcan.Query[ReportData]) {
+		q.Where("city", "like", "Москва")
+	}).FindById(2)
+```
+
 ## Статус проекта
 
 * Query Builder: реализован и стабилизирован
-* ORM-уровень: **активно дополняется и улучшается по мере новых коммитов**
+* ORM-уровень: реализован, в процессе дополнения
 * API может изменяться
