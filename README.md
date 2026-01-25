@@ -192,7 +192,7 @@ User
 
 ---
 
-## 🔹 UPDATE с JOIN
+## UPDATE с JOIN
 
 ```go
 vulcan.NewQuery[UserTest]().
