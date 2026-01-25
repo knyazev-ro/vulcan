@@ -65,12 +65,13 @@ func (q *Query[T]) recGenerateCols(i interface{}, cols []string) []string {
 
 func (q *Query[T]) MSelect(i interface{}) *Query[T] {
 	cols := q.recGenerateCols(i, []string{})
-	TName, ok := reflect.TypeOf(i).Elem().FieldByName("_")
+	metadata, ok := reflect.TypeOf(i).Elem().FieldByName("_")
 	if !ok {
 		panic("metadata is not found")
 	}
 	q.Model = model.Model{
-		TableName: TName.Tag.Get("table"),
+		TableName: metadata.Tag.Get("table"),
+		Pk:        metadata.Tag.Get("pk"),
 	}
 	if len(cols) > 0 {
 		q.selectRaw(cols)

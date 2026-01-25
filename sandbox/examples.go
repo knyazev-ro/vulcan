@@ -193,11 +193,11 @@ func ExamplesORM() {
 	}
 
 	type PostTest struct {
-		_      string `type:"metadata" table:"posts" pk:"id"`
-		Id     int64  `type:"column" col:"id"`
-		Name   string `type:"column" col:"name"`
-		UserId int64  `type:"column" col:"user_id"`
-		// PostTags []PostTag `type:"relation" table:"post_tags" reltype:"has-many" fk:"post_id"`
+		_        string    `type:"metadata" table:"posts" pk:"id"`
+		Id       int64     `type:"column" col:"id"`
+		Name     string    `type:"column" col:"name"`
+		UserId   int64     `type:"column" col:"user_id"`
+		PostTags []PostTag `type:"relation" table:"post_tags" reltype:"has-many" fk:"post_id" originalkey:"id"`
 	}
 
 	type ProfileTest struct {
@@ -209,12 +209,12 @@ func ExamplesORM() {
 	}
 
 	type UserTest struct {
-		_        string     `type:"metadata" table:"users" pk:"id"`
-		Id       int64      `type:"column" col:"id"`
-		Name     string     `type:"column" col:"name"`
-		LastName string     `type:"column" col:"last_name"`
-		Posts    []PostTest `type:"relation" table:"posts" reltype:"has-many" fk:"user_id" originalkey:"id"`
-		// Profile  ProfileTest `type:"relation" table:"profiles" reltype:"has-one" fk:"user_id" originalkey:"id"`
+		_        string      `type:"metadata" table:"users" pk:"id"`
+		Id       int64       `type:"column" col:"id"`
+		Name     string      `type:"column" col:"name"`
+		LastName string      `type:"column" col:"last_name"`
+		Posts    []PostTest  `type:"relation" table:"posts" reltype:"has-many" fk:"user_id" originalkey:"id"`
+		Profile  ProfileTest `type:"relation" table:"profiles" reltype:"has-one" fk:"user_id" originalkey:"id"`
 	}
 
 	type DefUserTest struct {
@@ -250,8 +250,8 @@ func ExamplesORM() {
 
 	start := time.Now()
 	fmt.Println()
-	q1 := vulcan.NewQuery[UserTest]().Load()
-	fmt.Println(q1)
+	_ = vulcan.NewQuery[UserTest]().Load()
+	// fmt.Println(len(q1))
 	end := time.Now()
 	fmt.Println(end.Sub(start))
 

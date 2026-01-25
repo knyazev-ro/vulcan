@@ -70,6 +70,14 @@ func (q *Query[T]) WhereIn(col string, values []any) *Query[T] {
 	return q
 }
 
+func (q *Query[T]) WhereAny(col string, values []any) *Query[T] {
+
+	statement := fmt.Sprintf(`%s = ANY(?)`, col)
+	q.Bindings = append(q.Bindings, values)
+	q.whereExp += statement
+	return q
+}
+
 // return Model and bool - true - exists, false - not
 func (q *Query[T]) FindById(id int64) (T, bool) {
 	Id := fmt.Sprintf("%s.id", q.Model.TableName)
