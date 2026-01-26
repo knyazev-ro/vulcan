@@ -230,6 +230,30 @@ func (q *Query[T]) placeBelongsTo(parent []reflect.Value, grouped map[any][]refl
 	}
 }
 
+func (q *Query[T]) CountRelations(i interface{}) int {
+	val := reflect.ValueOf(i).Elem()
+	if val.Kind() != reflect.Struct {
+		panic("must be a struct!")
+	}
+
+	count := 0
+	for i := 0; i < val.NumField(); i++ {
+		tagType := val.Type().Field(i).Tag.Get("type")
+		if tagType == "relation" {
+			count++
+		}
+	}
+	return count
+}
+
+type GorutineData struct {
+	dataGrouped      map[any][]reflect.Value
+	relFieldTypeName string
+	originalKey      string
+	relType          string
+	fk               string
+}
+
 // Умная гидрация. Умная, потому что тупая версия реализована была в первом прототипе, использовала LEFT JOIN для отношений
 // Умная версия использует WHERE ANY и группировку уже по ним. Хоть вместо 1 запроса будет N, где N - количество отношений в указанной структуре
 // Она все равно будет быстрее при малых запросах и феноменально быстрее при больших
@@ -253,6 +277,9 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 		q.fillCols(newStruct.Addr().Interface(), row, TableName)
 		structData = append(structData, newStruct)
 	}
+
+	totalRelations := q.CountRelations(model)
+	results := make(chan GorutineData, totalRelations)
 
 	for i := 0; i < val.NumField(); i++ {
 		relFieldValue := val.Field(i)
@@ -281,13 +308,16 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 					whereHasClosure(query)
 				}
 
-				subQuery, subQueryPkMap := query.WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap()
-				// Продолжаем рекурсию
-				data := q.smartHydration(relStruct, subQuery, subQueryPkMap)
-				// Группируем данные
-				dataGrouped := q.groupByKey(data, fk)
+				go func() {
+					subQuery, subQueryPkMap := query.WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap()
+					// Продолжаем рекурсию
+					data := q.smartHydration(relStruct, subQuery, subQueryPkMap)
+					// Группируем данные
+					dataGrouped := q.groupByKey(data, fk)
+					results <- GorutineData{dataGrouped: dataGrouped, relFieldTypeName: relFieldType.Name, originalKey: originalKey, relType: consts.HasMany}
+				}()
 				// Выполняем вставку по полям родителя в соответсвующий relation в памяти
-				q.placeHasMany(structData, dataGrouped, originalKey, relFieldType.Name)
+				// q.placeHasMany(structData, dataGrouped, originalKey, relFieldType.Name)
 			}
 
 			// HasOne
@@ -300,10 +330,14 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 					whereHasClosure(query)
 				}
 
-				subQuery, subQueryPkMap := query.WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap()
-				data := q.smartHydration(relStruct, subQuery, subQueryPkMap)
-				dataGrouped := q.groupByKey(data, fk)
-				q.placeHasOne(structData, dataGrouped, originalKey, relFieldType.Name)
+				go func() {
+					subQuery, subQueryPkMap := query.WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap()
+					data := q.smartHydration(relStruct, subQuery, subQueryPkMap)
+					dataGrouped := q.groupByKey(data, fk)
+					results <- GorutineData{dataGrouped: dataGrouped, relFieldTypeName: relFieldType.Name, originalKey: originalKey, relType: consts.HasOne}
+				}()
+
+				// q.placeHasOne(structData, dataGrouped, originalKey, relFieldType.Name)
 			}
 
 			// BelongsTo
@@ -321,11 +355,27 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 					key := fmt.Sprintf("%s_%s", TableName, fk)
 					ids = append(ids, p[key])
 				}
-				subQuery, subQueryPkMap := query.WhereAny(originalKey, ids).LoadMap()
-				data := q.smartHydration(relStruct, subQuery, subQueryPkMap)
-				dataGrouped := q.groupByKey(data, originalKey)
-				q.placeBelongsTo(structData, dataGrouped, fk, relFieldType.Name)
+
+				go func() {
+					subQuery, subQueryPkMap := query.WhereAny(originalKey, ids).LoadMap()
+					data := q.smartHydration(relStruct, subQuery, subQueryPkMap)
+					dataGrouped := q.groupByKey(data, originalKey)
+					results <- GorutineData{dataGrouped: dataGrouped, relFieldTypeName: relFieldType.Name, fk: fk, relType: consts.BelongsTo}
+				}()
+				// q.placeBelongsTo(structData, dataGrouped, fk, relFieldType.Name)
 			}
+		}
+	}
+
+	for j := 0; j < totalRelations; j++ {
+		r := <-results
+		switch r.relType {
+		case consts.HasMany:
+			q.placeHasMany(structData, r.dataGrouped, r.originalKey, r.relFieldTypeName)
+		case consts.HasOne:
+			q.placeHasOne(structData, r.dataGrouped, r.originalKey, r.relFieldTypeName)
+		case consts.BelongsTo:
+			q.placeBelongsTo(structData, r.dataGrouped, r.fk, r.relFieldTypeName)
 		}
 	}
 

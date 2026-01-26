@@ -380,17 +380,18 @@ func RealExampleORM() {
 		// Дочерние элементы
 		ValueItems []ReportValueItem `type:"relation" table:"report_value_items" reltype:"has-many" fk:"data_table_id" originalkey:"id"`
 	}
-	start := time.Now()
-	vulcan.NewQuery[ReportData]().Load()
-	end := time.Now()
-	fmt.Println(end.Sub(start))
 
-	start = time.Now()
+	start := time.Now()
 	q2, _ := vulcan.NewQuery[ReportData]().With("City", func(q *vulcan.Query[ReportData]) {
 		q.Where("city", "like", "Москва")
 	}).FindById(2)
-	end = time.Now()
+	end := time.Now()
 	fmt.Println(q2)
+	fmt.Println(end.Sub(start))
+
+	start = time.Now()
+	vulcan.NewQuery[ReportData]().Load()
+	end = time.Now()
 	fmt.Println(end.Sub(start))
 
 }
