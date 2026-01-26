@@ -201,22 +201,6 @@ func ExamplesORM() {
 		Profile  ProfileTest `type:"relation" table:"profiles" reltype:"has-one" fk:"user_id" originalkey:"id"`
 	}
 
-	type DefUserTest struct {
-		_        string `type:"metadata" table:"users" pk:"id"`
-		Id       int64  `type:"column" col:"id"`
-		Name     string `type:"column" col:"name"`
-		LastName string `type:"column" col:"last_name"`
-	}
-
-	type MainProfileTest struct {
-		_      string      `type:"metadata" table:"profiles" pk:"id"`
-		Id     int64       `type:"column" col:"id"`
-		UserId int64       `type:"column" col:"user_id"`
-		Bio    string      `type:"column" col:"bio"`
-		Avatar string      `type:"column" col:"avatar"`
-		User   DefUserTest `type:"relation" table:"users" reltype:"belongs-to" fk:"user_id" originalkey:"id"`
-	}
-
 	// vulcan.NewQuery[UserTest]().Where("name", "like", "Bobby").Update(map[string]any{
 	// 	"name":      "Duran",
 	// 	"last_name": "Duran",
