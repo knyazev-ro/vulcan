@@ -8,7 +8,7 @@ import (
 	"github.com/knyazev-ro/vulcan/config"
 )
 
-var GlobalLimit = make(chan struct{}, 64)
+var GlobalLimit = make(chan struct{}, 100)
 var DB *sql.DB
 
 func Init() {
