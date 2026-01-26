@@ -81,10 +81,14 @@ func (q *Query[T]) fillCols(i interface{}, row map[string]any, TableName string)
 		field := val.Field(j)
 		fieldType := val.Type().Field(j)
 		tagType := fieldType.Tag.Get("type")
+		tableTag := fieldType.Tag.Get("table")
 		if tagType == "column" {
 			col := fieldType.Tag.Get("col")
 
 			colKey := fmt.Sprintf("%s_%s", TableName, col)
+			if tableTag != "" {
+				colKey = fmt.Sprintf("%s_%s", tableTag, col)
+			}
 
 			// int64
 			if field.Kind() == reflect.Int64 {
