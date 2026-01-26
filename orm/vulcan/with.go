@@ -309,7 +309,9 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 				}
 
 				go func() {
+					db.GlobalLimit <- struct{}{}
 					subQuery, subQueryPkMap := query.WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap()
+					<-db.GlobalLimit
 					// Продолжаем рекурсию
 					data := q.smartHydration(relStruct, subQuery, subQueryPkMap)
 					// Группируем данные
@@ -331,7 +333,10 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 				}
 
 				go func() {
+					db.GlobalLimit <- struct{}{}
 					subQuery, subQueryPkMap := query.WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap()
+					<-db.GlobalLimit
+
 					data := q.smartHydration(relStruct, subQuery, subQueryPkMap)
 					dataGrouped := q.groupByKey(data, fk)
 					results <- GorutineData{dataGrouped: dataGrouped, relFieldTypeName: relFieldType.Name, originalKey: originalKey, relType: consts.HasOne}
@@ -357,7 +362,10 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 				}
 
 				go func() {
+					db.GlobalLimit <- struct{}{}
 					subQuery, subQueryPkMap := query.WhereAny(originalKey, ids).LoadMap()
+					<-db.GlobalLimit
+
 					data := q.smartHydration(relStruct, subQuery, subQueryPkMap)
 					dataGrouped := q.groupByKey(data, originalKey)
 					results <- GorutineData{dataGrouped: dataGrouped, relFieldTypeName: relFieldType.Name, fk: fk, relType: consts.BelongsTo}
