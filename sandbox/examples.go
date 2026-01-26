@@ -232,6 +232,7 @@ func ExamplesORM() {
 	// 	"last_name": "Fisher",
 	// })
 
+	// runtime.GOMAXPROCS(1)
 	start := time.Now()
 	fmt.Println()
 	q1 := vulcan.NewQuery[UserTest]().Load()
@@ -381,17 +382,18 @@ func RealExampleORM() {
 		ValueItems []ReportValueItem `type:"relation" table:"report_value_items" reltype:"has-many" fk:"data_table_id" originalkey:"id"`
 	}
 
+	// runtime.GOMAXPROCS(1)
 	start := time.Now()
-	q2, _ := vulcan.NewQuery[ReportData]().With("City", func(q *vulcan.Query[ReportData]) {
+	vulcan.NewQuery[ReportData]().With("City", func(q *vulcan.Query[ReportData]) {
 		q.Where("city", "like", "Москва")
 	}).FindById(2)
 	end := time.Now()
-	fmt.Println(q2)
+	// fmt.Println(q2)
 	fmt.Println(end.Sub(start))
 
 	start = time.Now()
-	vulcan.NewQuery[ReportData]().Load()
+	q1 := vulcan.NewQuery[ReportData]().Load()
 	end = time.Now()
-	fmt.Println(end.Sub(start))
+	fmt.Println(end.Sub(start), q1[256].CompGroup.CompGroupName, len(q1))
 
 }

@@ -20,11 +20,11 @@ func GetConfig() *Config {
 	if Cfg == nil {
 		return &Config{
 			Driver:   "postgres",
-			User:     "amt",
-			Password: "amt",
+			User:     "postgres",
+			Password: "123",
 			Host:     "localhost",
-			Port:     "25432",
-			Database: "amt_consult",
+			Port:     "5432",
+			Database: "vulcan_test",
 		}
 	} else {
 		return Cfg
