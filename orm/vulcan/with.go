@@ -8,16 +8,6 @@ import (
 	"github.com/knyazev-ro/vulcan/orm/db"
 )
 
-func MapByKey(data []map[string]any, key string) map[any][]map[string]any {
-	result := make(map[any][]map[string]any)
-	for _, item := range data {
-		if val, exists := item[key]; exists {
-			result[val] = append(result[val], item)
-		}
-	}
-	return result
-}
-
 // Модель можно загрузить по схеме структуры в виде плоского MAP.
 func (q *Query[T]) LoadMap() ([]map[string]any, map[string][]any) {
 	q.Build()
@@ -64,64 +54,6 @@ func (q *Query[T]) LoadMap() ([]map[string]any, map[string][]any) {
 }
 
 // Заполнение обычных полей, игнорирует заполнение полей-отношений
-func (q *Query[T]) fillCols(i interface{}, row map[string]any, TableName string) any {
-	val := reflect.ValueOf(i).Elem()
-	if val.Kind() != reflect.Struct {
-		panic("fillCols: i must be a pointer to a struct")
-	}
-
-	metadata, ok := val.Type().FieldByName("_")
-	if !ok {
-		panic("fillCols: struct must have a metadata field")
-	}
-
-	var rememberPkVal any
-	pk := metadata.Tag.Get("pk")
-	for j := 0; j < val.NumField(); j++ {
-		field := val.Field(j)
-		fieldType := val.Type().Field(j)
-		tagType := fieldType.Tag.Get("type")
-		tableTag := fieldType.Tag.Get("table")
-		if tagType == "column" {
-			col := fieldType.Tag.Get("col")
-
-			colKey := fmt.Sprintf("%s_%s", TableName, col)
-			if tableTag != "" {
-				colKey = fmt.Sprintf("%s_%s", tableTag, col)
-			}
-
-			// int64
-			if field.Kind() == reflect.Int64 {
-				switch v := row[colKey].(type) {
-				case int64:
-					field.SetInt(v)
-				case int: // на случай, если значение int
-					field.SetInt(int64(v))
-				default:
-					field.SetInt(0) // если тип не подходит
-				}
-				if col == pk {
-					rememberPkVal = field.Int()
-				}
-			}
-			// string
-			if field.Kind() == reflect.String {
-				switch v := row[colKey].(type) {
-				case string:
-					field.SetString(string(v))
-				default:
-					field.SetString("") // если тип не подходит
-				}
-				if col == pk {
-					rememberPkVal = field.String()
-				}
-			}
-
-		}
-	}
-	return rememberPkVal
-
-}
 
 // Группирует данные по ключу. Полезен для группировки по внешнему ключу, либо по собственному ключу сущности
 // Принимает ключ сущности по которому производится группировка и массив этих сущностей для операции
@@ -276,9 +208,79 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 
 	// На этом этапе записываются не-relation поля и создаются сущности родителя, сразу в массив
 	structData := []reflect.Value{}
+	cachedCols := map[int]string{}
+	cachedTags := map[int]map[string]string{}
+
 	for _, row := range parentData {
 		newStruct := reflect.New(reflect.TypeOf(model).Elem()).Elem()
-		q.fillCols(newStruct.Addr().Interface(), row, TableName)
+
+		if newStruct.Kind() != reflect.Struct {
+			panic("fillCols: i must be a pointer to a struct")
+		}
+
+		for j := 0; j < newStruct.NumField(); j++ {
+			field := newStruct.Field(j)
+
+			cTags, ex := cachedTags[j]
+			tagType := ""
+			tableTag := ""
+			col := ""
+			if !ex {
+				fieldType := newStruct.Type().Field(j)
+				tagType = fieldType.Tag.Get("type")
+				tableTag = fieldType.Tag.Get("table")
+				col = fieldType.Tag.Get("col")
+
+				cachedTags[j] = map[string]string{
+					"tagType":  tagType,
+					"tableTag": tableTag,
+					"col":      col,
+				}
+
+			} else {
+				tagType = cTags["tagType"]
+				tableTag = cTags["tableTag"]
+				col = cTags["col"]
+			}
+
+			if tagType == "column" {
+
+				colKey := ""
+				if cachedCols[j] == "" {
+
+					colKey = fmt.Sprintf("%s_%s", TableName, col)
+					if tableTag != "" {
+						colKey = fmt.Sprintf("%s_%s", tableTag, col)
+					}
+					cachedCols[j] = colKey
+				} else {
+					colKey = cachedCols[j]
+				}
+
+				// int64
+				if field.Kind() == reflect.Int64 {
+					switch v := row[colKey].(type) {
+					case int64:
+						field.SetInt(v)
+					case int: // на случай, если значение int
+						field.SetInt(int64(v))
+					default:
+						field.SetInt(0) // если тип не подходит
+					}
+				}
+				// string
+				if field.Kind() == reflect.String {
+					switch v := row[colKey].(type) {
+					case string:
+						field.SetString(string(v))
+					default:
+						field.SetString("") // если тип не подходит
+					}
+				}
+
+			}
+		}
+
 		structData = append(structData, newStruct)
 	}
 
@@ -360,8 +362,9 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 				}
 
 				ids := []any{}
+				key := fmt.Sprintf("%s_%s", TableName, fk) // o.
+
 				for _, p := range parentData {
-					key := fmt.Sprintf("%s_%s", TableName, fk)
 					ids = append(ids, p[key])
 				}
 
