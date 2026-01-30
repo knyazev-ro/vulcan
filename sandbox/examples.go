@@ -251,14 +251,14 @@ func RealExampleORM() {
 		_  string `type:"metadata" table:"reports" pk:"id"`
 		Id int64  `type:"column" col:"id"`
 		// Дополнительные поля из fillable
-		SystemFileId         int64  `type:"column" col:"system_file_id"`
-		DataFilePath         string `type:"column" col:"data_file_path"`
-		Filters              string `type:"column" col:"filters"`
-		Status               string `type:"column" col:"status"`
-		TechnicalTitle       string `type:"column" col:"technical_title"`
-		CreatedBy            int64  `type:"column" col:"created_by"`
-		ParseErrorMessage    string `type:"column" col:"parse_error_message"`
-		FullReportAttachment string `type:"column" col:"full_report_attachment"`
+		SystemFileId         int64   `type:"column" col:"system_file_id"`
+		DataFilePath         string  `type:"column" col:"data_file_path"`
+		Filters              string  `type:"column" col:"filters"`
+		Status               string  `type:"column" col:"status"`
+		TechnicalTitle       string  `type:"column" col:"technical_title"`
+		CreatedBy            int64   `type:"column" col:"created_by"`
+		ParseErrorMessage    *string `type:"column" col:"parse_error_message"`
+		FullReportAttachment *string `type:"column" col:"full_report_attachment"`
 	}
 
 	type ReportIndex struct {
@@ -378,6 +378,7 @@ func RealExampleORM() {
 	start = time.Now()
 	q1 := vulcan.NewQuery[ReportData]().Load()
 	end = time.Now()
-	fmt.Println(end.Sub(start), q1[256].CompGroup.CompGroupName, len(q1))
+	fmt.Println(end.Sub(start), q1[256].CompGroup.CompGroupName, len(q1), *q1[0].Report.ParseErrorMessage)
+	// fmt.Println(vulcan.NewQuery[Report]().FindById(5))
 
 }

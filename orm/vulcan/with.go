@@ -192,6 +192,44 @@ type GorutineData struct {
 	fk               string
 }
 
+func (q *Query[T]) fillWithPrimitive(field reflect.Value, row map[string]any, colKey string) reflect.Value {
+	if field.Kind() == reflect.Int64 {
+		switch v := row[colKey].(type) {
+		case int64:
+			field.SetInt(v)
+		case int: // на случай, если значение int
+			field.SetInt(int64(v))
+		default:
+			field.SetInt(0) // если тип не подходит
+		}
+		return field
+
+	}
+	// string
+	if field.Kind() == reflect.String {
+		switch v := row[colKey].(type) {
+		case string:
+			field.SetString(string(v))
+		default:
+			field.SetString("") // если тип не подходит
+		}
+		return field
+	}
+
+	// bool
+	if field.Kind() == reflect.Bool {
+		switch v := row[colKey].(type) {
+		case bool:
+			field.SetBool(bool(v))
+		default:
+			field.SetBool(false) // если тип не подходит
+		}
+		return field
+
+	}
+	return field
+}
+
 // Умная гидрация. Умная, потому что тупая версия реализована была в первом прототипе, использовала LEFT JOIN для отношений
 // Умная версия использует WHERE ANY и группировку уже по ним. Хоть вместо 1 запроса будет N, где N - количество отношений в указанной структуре
 // Она все равно будет быстрее при малых запросах и феноменально быстрее при больших
@@ -259,24 +297,17 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 					colKey = cachedCols[j]
 				}
 
-				// int64
-				if field.Kind() == reflect.Int64 {
-					switch v := row[colKey].(type) {
-					case int64:
-						field.SetInt(v)
-					case int: // на случай, если значение int
-						field.SetInt(int64(v))
-					default:
-						field.SetInt(0) // если тип не подходит
-					}
-				}
-				// string
-				if field.Kind() == reflect.String {
-					switch v := row[colKey].(type) {
-					case string:
-						field.SetString(string(v))
-					default:
-						field.SetString("") // если тип не подходит
+				// normal primitive values like int string bool etc.
+				q.fillWithPrimitive(field, row, colKey)
+
+				// NULL Support!
+				if field.Kind() == reflect.Ptr {
+					if row[colKey] != nil {
+						tmpField := reflect.New(field.Type().Elem())
+						q.fillWithPrimitive(tmpField.Elem(), row, colKey)
+						field.Set(tmpField)
+					} else {
+						field.Set(reflect.Zero(field.Type()))
 					}
 				}
 
