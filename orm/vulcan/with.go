@@ -28,18 +28,20 @@ func (q *Query[T]) LoadMap() ([]map[string]any, map[string][]any) {
 	pkCols := q.getPk(pk, table)
 	mapData := []map[string]any{}
 	pkMap := map[string][]any{}
-	for rows.Next() {
-		colValues := make([]any, len(cols))
-		colPtrs := make([]any, len(cols))
-		colsMap := map[string]any{}
 
-		for i := range colValues {
-			colPtrs[i] = &colValues[i]
-		}
+	n := len(cols)
+	colValues := make([]any, n)
+	colPtrs := make([]any, n)
+	for i := range colValues {
+		colPtrs[i] = &colValues[i]
+	}
+
+	for rows.Next() {
 		if err := rows.Scan(colPtrs...); err != nil {
 			panic(err)
 		}
 
+		colsMap := make(map[string]any, n)
 		for i, col := range cols {
 			colsMap[col] = colValues[i]
 		}
