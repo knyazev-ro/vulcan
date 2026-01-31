@@ -1,42 +1,49 @@
 # **Vulcan ORM**
 
-**Vulcan ORM** — это SQL Query Builder + struct based ORM для Go с синтаксисом, вдохновлённым Laravel Query Builder. Проект является частью фреймворка **Gerard** и предназначен для безопасной, предсказуемой и детерминированной генерации SQL-запросов с поддержкой вложенных условий, join-операций, биндингов и работы с PostgreSQL.
+**Vulcan ORM** is an SQL Query Builder + struct-based ORM for Go, with syntax inspired by the Laravel Query Builder.
+The project is part of the **Gerard** framework and is designed for **safe, predictable, and deterministic SQL generation**, with support for nested conditions, join operations, bindings, and PostgreSQL.
 
-Vulcan реализует принцип Data Mapper'ов в мире ORM. Структуры служат инструкцией того, как будут получены данные. Это удобный контракт, упрощающий разработку: не нужно выполнять запрос, чтобы понять в каком виде придут данные. То, как определили структуру до самого запроса гарантирует структуру на выходе.  
+Vulcan implements the **Data Mapper** principle in the ORM world.
+Structs act as instructions describing **how data will be fetched**. This creates a convenient and explicit contract: you don’t need to execute a query to understand the shape of the result.
+The way a struct is defined *before* executing a query guarantees the structure of the output.
 
-## Поддерживаемые возможности
+---
+
+## Supported Features
 
 * `SELECT`
 * `WHERE` / `OR WHERE`
-* Вложенные условия через `WhereClause` / `OrWhereClause`
-* `INNER JOIN`, `LEFT JOIN`
+* Nested conditions via `WhereClause` / `OrWhereClause`
+* `INNER JOIN`, `LEFT JOIN`, `RIGHT JOIN`
 * `ORDER BY`
 * `LIMIT`, `OFFSET`
 * `INSERT` / `CREATE`
 * `UPDATE`
 * PostgreSQL placeholders (`$1`, `$2`, …)
-* Интеграция с `database/sql`
+* Integration with `database/sql`
 
+---
 
-## ORM-возможности
+## ORM Features
 
-Vulcan включает экспериментальный ORM-уровень:
+Vulcan includes an ORM layer:
 
-* Автоматическая генерация `SELECT` на основе структуры
-* Поддержка relations:
+* Automatic `SELECT` generation based on structs
+* Relation support:
 
   * `has-many`
   * `belongs-to`
   * `has-one`
-  * `many-to-many` (через pivot-таблицу)
-* Автоматическая генерация Preload
-* Рекурсивная гидратация вложенных структур
-* Группировка по вложенным запросам
+  * `many-to-many` (via pivot tables)
+* Automatic preload generation
+* Recursive hydration of nested structures
+* Grouping via nested queries
 
+---
 
-## Базовый пример (новый API)
+## Basic Example
 
-Вместо передачи `user.model` теперь используется дженерик:
+Uses generics:
 
 ```go
 type UserTest struct {
@@ -53,9 +60,10 @@ vulcan.NewQuery[UserTest]().
     Load()
 ```
 
- `Select` теперь опционален — по умолчанию список колонок генерируется из структуры.
+`Select` is now optional — by default, the column list is generated from the struct, and this is the **preferred approach**.
+The idea is that structs define the output, so using `Select` in Vulcan is now considered legacy and will be removed in the future.
 
-Сгенерированный SQL:
+Generated SQL:
 
 ```sql
 SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name
@@ -72,7 +80,7 @@ Bindings:
 
 ---
 
-## Вложенные условия
+## Nested Conditions
 
 ```go
 vulcan.NewQuery[UserTest]().
@@ -91,7 +99,7 @@ vulcan.NewQuery[UserTest]().
     SQL()
 ```
 
-Результат:
+Result:
 
 ```sql
 SELECT "users"."id"
@@ -109,9 +117,9 @@ Bindings:
 
 ---
 
-## JOIN (ручный режим)
+## JOIN (Manual Mode)
 
-В текущей версии, если требуется получить плоскую структуру, достаточно объявить одну структуру и там, где поля должны быть отображены из связанной таблицы - указать тег `table:<название таблицы>`
+In the current version, if you need a flat result structure, it is enough to declare a single struct and specify the `table:<table_name>` tag for fields mapped from related tables.
 
 ```go
 q := vulcan.NewQuery[UserTest]().
@@ -126,10 +134,10 @@ q := vulcan.NewQuery[UserTest]().
     SQL()
 ```
 
-Результат:
+Result:
 
 ```sql
-SELECT ...
+SELECT <all fields defined in the struct>
 FROM users
 INNER JOIN posts ON posts.user_id = users.id
 LEFT JOIN categories ON categories.id = posts.category_id
@@ -140,9 +148,9 @@ WHERE "users.active" = $1;
 
 ## ORM Relations
 
-Vulcan может автоматически строить и подгружать связанные модели на основе вложенной структуры!
+Vulcan can automatically build and load related models based on **nested structs**.
 
-### Пример: One-to-Many + Many-to-Many
+### Example: One-to-Many + Many-to-Many
 
 ```go
 type TagTest struct {
@@ -175,15 +183,14 @@ type UserTest struct {
 }
 ```
 
-Запрос:
+Query:
 
 ```go
 vulcan.NewQuery[UserTest]().Load()
 ```
 
-Vulcan автоматически сгенерирует 4 запроса.
-
-И соберёт результат в вложенные структуры:
+Vulcan automatically generates **4 queries**
+and assembles the result into nested structures:
 
 ```
 User
@@ -194,7 +201,7 @@ User
 
 ---
 
-## UPDATE с JOIN
+## UPDATE with JOIN
 
 ```go
 vulcan.NewQuery[UserTest]().
@@ -211,7 +218,7 @@ vulcan.NewQuery[UserTest]().
     })
 ```
 
-Сгенерированный SQL:
+Generated SQL:
 
 ```sql
 UPDATE users
@@ -231,60 +238,136 @@ Bindings:
 
 ---
 
-## Контракт данных
+## Data Contract
 
-Ключевой архитектурный принцип Vulcan заключается в том, что **структуры сущностей являются контрактом выходных данных**.
+A core architectural principle of Vulcan is that **entity structs are the data output contract**.
 
-Это означает:
+This means:
 
-* Структуры моделей определяют **ожидаемую форму результата запроса**.
-* Изменение структуры автоматически меняет семантику данных, которые можно получить.
-* Query Builder не «угадывает» типы и не выполняет неявный маппинг — ответственность за корректность лежит на описании структур.
-* Такой подход делает поведение системы прозрачным, предсказуемым и удобным для сопровождения.
+* Model structs define the **expected shape of query results**
+* Changing a struct automatically changes the data semantics
+* The Query Builder does not “guess” types or perform implicit mapping
+* Responsibility for correctness lies in struct definitions
 
----
-
-## Безопасность
-
-* Все значения передаются через placeholders
-* Значения хранятся отдельно в `Bindings`
-* Конкатенация пользовательских значений в SQL запрещена
-
-> Имена колонок и таблиц считаются доверенными, как в Laravel / GORM.
+This approach makes the system transparent, predictable, and easy to maintain.
 
 ---
 
-## Архитектурные решения
+## Security
 
-* SQL собирается детерминированно
-* Вложенность условий реализована через управление состоянием билдера
-* Скобки формируются логически через `WhereClause` и `OrWhereClause`
-* Отсутствует AST и интерпретация SQL
+* All values are passed via placeholders
+* Values are stored separately in `Bindings`
+* Concatenation of user input into SQL is forbidden
 
-Это осознанный компромисс между контролем, производительностью и сложностью реализации.
-
----
-
-## Ограничения
-
-* Нет поддержки множества SQL-диалектов — приоритет отдан PostgreSQL
+> Column and table names are considered trusted, as in Laravel / GORM.
 
 ---
 
-## Новые возможности
+## Architectural Decisions
 
-Были добавлены такие методы, как `DeleteById`, `FindById` и, самое мощное в актуальной версии - поддержка мутации подзапросов `With`. На данный момент есть поддержка фильтрации отношений на уровне родительской структуры через замыкания. Название в первом аргументе должно совпадать с названием переменной в которую будет записано отношение в вашей структуре. Возможны вложенные With.
+* SQL is built deterministically
+* Nested conditions are implemented via builder state control
+* Parentheses are formed logically via `WhereClause` and `OrWhereClause`
+* No AST or SQL interpretation layer
 
-Важный момент: метод `With` влияет только на то, в каком виде будут подгружены отношения. Отсутствие/Присутствие отношения в конечном запросе определяете вы в **структуре**, которую определили перед самим запросом!
+This is a deliberate tradeoff between control, performance, and implementation complexity.
+
+---
+
+## Limitations
+
+* No multi-dialect SQL support — PostgreSQL is the primary target
+
+---
+
+## New Features
+
+New methods such as `DeleteById`, `FindById`, and most importantly in the current version — **subquery mutation support via `With`** — have been added.
+
+Currently supported:
+
+* Relation-level filtering via closures on the parent struct
+* Nested `With` calls
+
+Important note:
+The `With` method **only affects how relations are loaded**.
+Whether a relation exists in the final result is determined **by the struct**, not the query.
+
 ```go
-	q2, _ := vulcan.NewQuery[ReportData]().With("City", func(q *vulcan.Query[ReportData]) {
-		q.Where("city", "like", "Москва")
-	}).FindById(2)
+q2, _ := vulcan.NewQuery[ReportData]().With("City", func(q *vulcan.Query[ReportData]) {
+    q.Where("city", "like", "Москва")
+}).FindById(2)
 ```
 
-## Статус проекта
+Model relations, if present, are now loaded **concurrently using goroutines**.
 
-* Query Builder: реализован и стабилизирован
-* ORM-уровень: реализован, в процессе дополнения
-* API может изменяться
-* В разработке NULL представления. Требуется рефакторинг + добавление функционала.
+---
+
+## Benchmarks (Laravel Eloquent ORM vs Vulcan)
+
+**Dataset:** 23,000 records
+**Relations:** 7 × `belongsTo`, 1 × `hasMany`
+**Baseline:** Laravel Eloquent ORM (2.9 s)
+
+| ORM / Strategy                                                                   | Time   | Speedup         |
+| -------------------------------------------------------------------------------- | ------ | --------------- |
+| Laravel **Eloquent ORM**                                                         | 2.9 s  | 1.0×            |
+| **Vulcan** (v1, relations via `JOIN`)                                            | 7.0 s  | 0.41× (slower)  |
+| **Vulcan** (`WHERE ANY` eager loading)                                           | 600 ms | **4.8× faster** |
+| **Vulcan** (`WHERE ANY` + concurrent relation loading)                           | 500 ms | **5.8× faster** |
+| **CURRENT Vulcan** (`WHERE ANY` + concurrent loading, post-optimized, NULL-safe) | 300 ms | **9.7× faster** |
+
+---
+
+## Benchmarks (Go ORM: GORM vs Vulcan)
+
+### Case 1 — Full load without relations
+
+**Dataset:** 107,536 records
+**Query:** `SELECT * FROM report_data`
+**Baseline:** GORM (2.27 s)
+
+| ORM        | Time       | Speedup         | Notes                                           |
+| ---------- | ---------- | --------------- | ----------------------------------------------- |
+| **GORM**   | 2.27 s     | 1.0×            | `extended protocol limited to 65535 parameters` |
+| **Vulcan** | **1.19 s** | **1.9× faster** | Full table load                                 |
+
+---
+
+### Case 2 — Heavy relations load
+
+**Dataset:** 62,000 records
+**Relations:** 8 × `belongsTo`, 1 × `hasMany`
+**Baseline:** GORM (1.57 s)
+
+| ORM        | Time       | Speedup          | Notes                        |
+| ---------- | ---------- | ---------------- | ---------------------------- |
+| **GORM**   | 1.57 s     | 1.0×             | `SLOW SQL >= 200ms`          |
+| **Vulcan** | **843 ms** | **1.86× faster** | Concurrent relations loading |
+
+---
+
+### Highlights
+
+* **Up to ~10× faster than Laravel Eloquent** on relational workloads
+* **~2× faster than GORM** on large dataset reads
+* Eliminates PostgreSQL **65k parameter limit**
+* Scales better with complex relation graphs
+
+---
+
+### So…
+
+* Vulcan outperforms GORM in **both flat and relational workloads**
+* GORM hits **PostgreSQL extended protocol limits (65k params)**
+* Vulcan avoids parameter explosion and scales linearly
+* Best result: **~2× faster** on heavy relations, **~2.5× faster** on full table scans
+
+---
+
+## Project Status
+
+* Query Builder: implemented
+* ORM layer: implemented
+* NULL support: implemented
+* API is subject to change
