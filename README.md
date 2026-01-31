@@ -359,7 +359,7 @@ Model relations, if present, are now loaded **concurrently using goroutines**.
 ## Endurance Test (500 Iterations)
 
 **Test:** 23,000 records with 8 relations (7 × `belongsTo`, 1 × `hasMany`)  
-**Source:** [github.com/knyazev-ro/vulcan/tests](https://github.com/knyazev-ro/vulcan/tests)  
+**Source:** [github.com/knyazev-ro/vulcan/tests](https://github.com/knyazev-ro/vulcan/tree/main/tests)  
 **Configuration:** Semaphore 100, PostgreSQL connections 100  
 
 | Iterations | Records per Iteration | Relations | Total Records Processed | Total Time | Concurrency | Notes |
