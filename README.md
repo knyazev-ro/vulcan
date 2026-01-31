@@ -367,8 +367,11 @@ Model relations, if present, are now loaded **concurrently using goroutines**.
 
 ## Project Status
 
-* Query Builder: implemented
-* ORM layer: implemented
-* NULL support: implemented
-* API is subject to change
-* Context in work...
+| Component        | Status        | Notes |
+|------------------|---------------|-------|
+| Query Builder    | Implemented   | Stable |
+| ORM Layer        | Implemented   | Core functionality complete |
+| Relations        | Implemented   | Fully supported |
+| NULL Support     | Implemented   | Ptr Go idiomatic |
+| Context Support  | In progress   | API may change |
+| `GROUP BY`       | In progress   | Planned |
