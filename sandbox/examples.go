@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -8,7 +9,6 @@ import (
 )
 
 func ExamplesQuery() {
-
 	type CommentTest struct {
 		_        string `type:"metadata" table:"comments" pk:"id"`
 		Id       int64  `type:"column" col:"id"`
@@ -23,15 +23,11 @@ func ExamplesQuery() {
 	}
 
 	type PostTest struct {
-		_      string `type:"metadata" table:"posts" pk:"id"`
-		Id     int64  `type:"column" col:"id"`
-		Name   string `type:"column" col:"name"`
-		UserId int64  `type:"column" col:"user_id"`
-
-		// пост принадлежит категории
-		Category CategoryTest `type:"relation" table:"categories" reltype:"belongs-to" fk:"category_id" originalkey:"id"`
-
-		// у поста много комментариев
+		_        string        `type:"metadata" table:"posts" pk:"id"`
+		Id       int64         `type:"column" col:"id"`
+		Name     string        `type:"column" col:"name"`
+		UserId   int64         `type:"column" col:"user_id"`
+		Category CategoryTest  `type:"relation" table:"categories" reltype:"belongs-to" fk:"category_id" originalkey:"id"`
 		Comments []CommentTest `type:"relation" table:"comments" reltype:"has-many" fk:"post_id"`
 	}
 
@@ -43,15 +39,29 @@ func ExamplesQuery() {
 		Posts    []PostTest `type:"relation" table:"posts" reltype:"has-many" fk:"user_id"`
 	}
 
-	vulcan.NewQuery[UserTest]().
-		OrderBy([]string{"id"}, "desc").
-		Load()
+	ctx := context.Background()
 
-	vulcan.NewQuery[UserTest]().
+	// Примеры Load
+	users, err := vulcan.NewQuery[UserTest]().
+		OrderBy([]string{"id"}, "desc").
+		Load(ctx)
+	if err != nil {
+		fmt.Println("Load error:", err)
+	} else {
+		fmt.Println("Users loaded:", len(users))
+	}
+
+	users, err = vulcan.NewQuery[UserTest]().
 		Where("id", ">", 1).
 		Where("id", "!=", 3).
-		Load()
+		Load(ctx)
+	if err != nil {
+		fmt.Println("Load error:", err)
+	} else {
+		fmt.Println("Filtered users loaded:", len(users))
+	}
 
+	// Пример Update
 	vulcan.NewQuery[UserTest]().
 		From("posts").
 		On("posts.id", "=", "users.post_id").
@@ -62,73 +72,34 @@ func ExamplesQuery() {
 			jc.On("categories.id", "=", "posts.category_id")
 		}).
 		Where("categories.name", "like", "%A%").
-		Update(map[string]any{
+		Update(ctx, map[string]any{
 			"users.role_id":  1,
 			"users.owner_id": 2,
 		})
 
-	vulcan.NewQuery[UserTest]().
+	// Примеры сложных Where / OrWhere / WhereClause
+	sql := vulcan.NewQuery[UserTest]().
 		Where("role", "=", "admin").
 		OrWhere("role", "=", "moderator").
 		Build().
 		SQL()
+	fmt.Println("SQL Example:", sql)
 
-	vulcan.NewQuery[UserTest]().
-		Where("a", "=", 1).
-		OrWhere("b", "=", 2).
-		Where("c", "=", 3).
-		Build().
-		SQL()
+	// FindById пример
+	user, ok, err := vulcan.NewQuery[UserTest]().FindById(ctx, 3)
+	if err != nil {
+		fmt.Println("FindById error:", err)
+	} else if ok {
+		fmt.Println("User found:", user)
+	} else {
+		fmt.Println("User not found")
+	}
 
-	vulcan.NewQuery[UserTest]().
-		Where("status", "=", 1).
-		WhereClause(func(q *vulcan.Query[UserTest]) {
-			q.
-				Where("age", ">", 18).
-				OrWhereClause(func(q *vulcan.Query[UserTest]) {
-					q.
-						Where("role", "=", "admin").
-						Where("last_login", ">", "2026-01-01")
-				})
-		}).
-		Where("active", "=", 1).
-		Build().
-		SQL()
-
-	vulcan.NewQuery[UserTest]().
-		WhereClause(func(q *vulcan.Query[UserTest]) {
-			q.
-				Where("a", "=", 1).
-				OrWhereClause(func(q *vulcan.Query[UserTest]) {
-					q.
-						Where("b", "=", 2).
-						Where("c", "=", 3)
-				})
-		}).
-		Build().
-		SQL()
-
-	vulcan.NewQuery[UserTest]().
-		OrderBy([]string{"id"}, "asc").
-		Build().
-		SQL()
-
-	vulcan.NewQuery[UserTest]().
-		Create(map[string]any{
-			"name":      "John",
-			"last_name": "Johanson",
-		})
-
+	// Пример с Join и сложными WhereClause
 	q := vulcan.NewQuery[UserTest]().
-		InnerJoin("posts", func(jc *vulcan.Join) {
-			jc.On("posts.user_id", "=", "users.id")
-		}).
-		LeftJoin("categories", func(jc *vulcan.Join) {
-			jc.On("categories.id", "=", "posts.category_id")
-		}).
-		LeftJoin("comments", func(jc *vulcan.Join) {
-			jc.On("comments.post_id", "=", "posts.id")
-		}).
+		InnerJoin("posts", func(jc *vulcan.Join) { jc.On("posts.user_id", "=", "users.id") }).
+		LeftJoin("categories", func(jc *vulcan.Join) { jc.On("categories.id", "=", "posts.category_id") }).
+		LeftJoin("comments", func(jc *vulcan.Join) { jc.On("comments.post_id", "=", "posts.id") }).
 		Where("users.active", "=", 1).
 		WhereClause(func(q *vulcan.Query[UserTest]) {
 			q.Where("users.status", "=", "premium").
@@ -150,15 +121,12 @@ func ExamplesQuery() {
 				OrWhere("comments.content", "like", "%important%")
 		}).
 		Where("posts.views", ">", 1000).
-		OrderBy([]string{"users.id", "posts.id"}, "desc"). // В процессе переработки
+		OrderBy([]string{"users.id", "posts.id"}, "desc").
 		Limit(50).
 		Offset(10)
 
-	sql := q.Build().SQL()
-	bindings := q.Bindings
-
-	fmt.Println("SQL:", sql)
-	fmt.Println("Bindings:", bindings)
+	fmt.Println("Complex SQL:", q.Build().SQL())
+	fmt.Println("Bindings:", q.Bindings)
 }
 
 func ExamplesORM() {
@@ -200,49 +168,91 @@ func ExamplesORM() {
 		Posts    []PostTest  `type:"relation" table:"posts" reltype:"has-many" fk:"user_id" originalkey:"id"`
 		Profile  ProfileTest `type:"relation" table:"profiles" reltype:"has-one" fk:"user_id" originalkey:"id"`
 	}
+	ctx := context.Background()
 
-	// vulcan.NewQuery[UserTest]().Where("name", "like", "Bobby").Update(map[string]any{
-	// 	"name":      "Duran",
-	// 	"last_name": "Duran",
-	// })
+	// Update
+	err := vulcan.NewQuery[UserTest]().
+		Where("name", "like", "Bobby").
+		Update(ctx, map[string]any{
+			"name":      "Duran",
+			"last_name": "Duran",
+		})
+	if err != nil {
+		fmt.Println("Update error:", err)
+	} else {
+		fmt.Println("Update succeeded")
+	}
 
-	// vulcan.NewQuery[UserTest]().Create(map[string]any{
-	// 	"name":      "Garry",
-	// 	"last_name": "Debrua",
-	// })
+	// Create новые записи
+	err = vulcan.NewQuery[UserTest]().Create(ctx, map[string]any{
+		"name":      "Garry",
+		"last_name": "Debrua",
+	})
+	if err != nil {
+		fmt.Println("Create error:", err)
+	} else {
+		fmt.Println("Created user Garry")
+	}
 
-	// vulcan.NewQuery[UserTest]().Create(map[string]any{
-	// 	"name":      "Bobby",
-	// 	"last_name": "Fisher",
-	// })
+	err = vulcan.NewQuery[UserTest]().Create(ctx, map[string]any{
+		"name":      "Bobby",
+		"last_name": "Fisher",
+	})
+	if err != nil {
+		fmt.Println("Create error:", err)
+	} else {
+		fmt.Println("Created user Bobby")
+	}
 
-	// runtime.GOMAXPROCS(1)
+	// Load всех пользователей
 	start := time.Now()
-	fmt.Println()
-	q1 := vulcan.NewQuery[UserTest]().Load()
+	users, err := vulcan.NewQuery[UserTest]().Load(ctx)
 	end := time.Now()
-	fmt.Println(len(q1))
-	fmt.Println(end.Sub(start))
+	if err != nil {
+		fmt.Println("Load error:", err)
+	} else {
+		fmt.Println("Duration:", end.Sub(start))
+		fmt.Println("Loaded users:", len(users))
+	}
 
-	// model, ok := vulcan.NewQuery[UserTest]().FindById(3)
+	// FindById
+	user, ok, err := vulcan.NewQuery[UserTest]().FindById(ctx, 3)
+	if err != nil {
+		fmt.Println("FindById error:", err)
+	} else if ok {
+		fmt.Println("User found:", user)
+	} else {
+		fmt.Println("User not found")
+	}
 
-	// if ok {
-	// 	fmt.Println(model)
+	// Delete по условию
+	// _, err = vulcan.NewQuery[UserTest]().
+	// 	Where("name", "like", "%Garry%").
+	// 	Delete(ctx)
+	// if err != nil {
+	// 	fmt.Println("Delete error:", err)
+	// } else {
+	// 	fmt.Println("Deleted users with name like Garry")
 	// }
 
-	// vulcan.NewQuery[UserTest]().Where("users.name", "like", "%Garry%").Delete()
-	// vulcan.NewQuery[UserTest]().DeleteById(1)
+	// // DeleteById
+	// _, err = vulcan.NewQuery[UserTest]().DeleteById(ctx, 1)
+	// if err != nil {
+	// 	fmt.Println("DeleteById error:", err)
+	// } else {
+	// 	fmt.Println("Deleted user with ID 1")
+	// }
 
-	// start = time.Now()
-	// fmt.Println()
-	// vulcan.NewQuery[UserTest]().
-	// 	Build().
-	// 	Load()
-	// // fmt.Println(q2)
-	// end = time.Now()
-	// fmt.Println(end.Sub(start))
-
-	// vulcan.NewQuery[UserTest]().Using("posts p", "profiles pr").Where("p.name", "like", "%A%").Delete()
+	// Delete с Using (пример для множественных таблиц)
+	// _, err = vulcan.NewQuery[UserTest]().
+	// 	Using("posts p", "profiles pr").
+	// 	Where("p.name", "like", "%A%").
+	// 	Delete(ctx)
+	// if err != nil {
+	// 	fmt.Println("Delete with Using error:", err)
+	// } else {
+	// 	fmt.Println("Deleted users with posts.name like %A%")
+	// }
 }
 
 func RealExampleORM() {
@@ -372,21 +382,29 @@ func RealExampleORM() {
 		ValueItems []ReportValueItem `type:"relation" table:"report_value_items" reltype:"has-many" fk:"data_table_id" originalkey:"id"`
 	}
 
+	ctx := context.Background()
 	// runtime.GOMAXPROCS(1)
-	start := time.Now()
-	vulcan.NewQuery[ReportData]().With("City", func(q *vulcan.Query[ReportData]) {
+	// FindById с фильтром
+	report, ok, err := vulcan.NewQuery[ReportData]().With("City", func(q *vulcan.Query[ReportData]) {
 		q.Where("city", "like", "Москва")
-	}).FindById(2)
+	}).FindById(ctx, 2)
+	if err != nil {
+		fmt.Println("FindById error:", err)
+	} else if ok {
+		fmt.Println("Report found:", report)
+	} else {
+		fmt.Println("Report not found")
+	}
+
+	// Load всех записей
+	start := time.Now()
+	reports, err := vulcan.NewQuery[ReportData]().Load(ctx)
 	end := time.Now()
-	// fmt.Println(q2)
-	fmt.Println(end.Sub(start))
-
-	start = time.Now()
-	q1 := vulcan.NewQuery[ReportData]().Load()
-	end = time.Now()
-	fmt.Println(end.Sub(start), q1[256].CompGroup.CompGroupName, len(q1))
-	fmt.Println(vulcan.NewQuery[Report]().FindById(5))
-
+	if err != nil {
+		fmt.Println("Load error:", err)
+	}
+	fmt.Println("Duration:", end.Sub(start))
+	fmt.Println("Loaded reports:", len(reports))
 	// fmt.Println(vulcan.NewQuery[ReportWithAggCount]().Load())
 
 }

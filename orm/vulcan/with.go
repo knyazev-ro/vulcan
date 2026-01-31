@@ -1,6 +1,7 @@
 package vulcan
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
@@ -9,13 +10,15 @@ import (
 )
 
 // Модель можно загрузить по схеме структуры в виде плоского MAP.
-func (q *Query[T]) LoadMap() ([]map[string]any, map[string][]any) {
+func (q *Query[T]) LoadMap(ctx context.Context) ([]map[string]any, map[string][]any, error) {
+	mapData := []map[string]any{}
+	pkMap := map[string][]any{}
 	q.Build()
 	// fmt.Println(q.SQL())
 	db := db.DB
-	rows, err := db.Query(q.fullStatement, q.Bindings...)
+	rows, err := db.QueryContext(ctx, q.fullStatement, q.Bindings...)
 	if err != nil {
-		panic(err)
+		return mapData, pkMap, err
 	}
 
 	defer rows.Close()
@@ -26,8 +29,6 @@ func (q *Query[T]) LoadMap() ([]map[string]any, map[string][]any) {
 	pk := q.Model.Pk
 
 	pkCols := q.getPk(pk, table)
-	mapData := []map[string]any{}
-	pkMap := map[string][]any{}
 
 	n := len(cols)
 	colValues := make([]any, n)
@@ -56,7 +57,7 @@ func (q *Query[T]) LoadMap() ([]map[string]any, map[string][]any) {
 
 		mapData = append(mapData, colsMap)
 	}
-	return mapData, pkMap
+	return mapData, pkMap, nil
 }
 
 // Заполнение обычных полей, игнорирует заполнение полей-отношений
@@ -194,6 +195,7 @@ type GorutineData struct {
 	originalKey      string
 	relType          string
 	fk               string
+	Error            error
 }
 
 func (q *Query[T]) fillWithPrimitive(field reflect.Value, row map[string]any, colKey string) reflect.Value {
@@ -237,7 +239,7 @@ func (q *Query[T]) fillWithPrimitive(field reflect.Value, row map[string]any, co
 // Умная гидрация. Умная, потому что тупая версия реализована была в первом прототипе, использовала LEFT JOIN для отношений
 // Умная версия использует WHERE ANY и группировку уже по ним. Хоть вместо 1 запроса будет N, где N - количество отношений в указанной структуре
 // Она все равно будет быстрее при малых запросах и феноменально быстрее при больших
-func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any, parentPkMap map[string][]any) []reflect.Value {
+func (q *Query[T]) smartHydration(ctx context.Context, model interface{}, parentData []map[string]any, parentPkMap map[string][]any) ([]reflect.Value, error) {
 
 	val := reflect.ValueOf(model).Elem()
 	valType := val.Type()
@@ -365,10 +367,21 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 
 				go func() {
 					db.GlobalLimit <- struct{}{}
-					subQuery, subQueryPkMap := query.WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap()
+					subQuery, subQueryPkMap, err := query.WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap(ctx)
 					<-db.GlobalLimit
+
+					if err != nil {
+						results <- GorutineData{Error: err}
+						return
+					}
+
 					// Продолжаем рекурсию
-					data := q.smartHydration(relStruct, subQuery, subQueryPkMap)
+					data, err := q.smartHydration(ctx, relStruct, subQuery, subQueryPkMap)
+
+					if err != nil {
+						results <- GorutineData{Error: err}
+						return
+					}
 					// Группируем данные
 					dataGrouped := q.groupByKey(data, fk)
 					results <- GorutineData{dataGrouped: dataGrouped, relFieldTypeName: relFieldType.Name, originalKey: originalKey, relType: consts.HasMany}
@@ -389,10 +402,18 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 
 				go func() {
 					db.GlobalLimit <- struct{}{}
-					subQuery, subQueryPkMap := query.WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap()
+					subQuery, subQueryPkMap, err := query.WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap(ctx)
 					<-db.GlobalLimit
+					if err != nil {
+						results <- GorutineData{Error: err}
+						return
+					}
+					data, err := q.smartHydration(ctx, relStruct, subQuery, subQueryPkMap)
 
-					data := q.smartHydration(relStruct, subQuery, subQueryPkMap)
+					if err != nil {
+						results <- GorutineData{Error: err}
+						return
+					}
 					dataGrouped := q.groupByKey(data, fk)
 					results <- GorutineData{dataGrouped: dataGrouped, relFieldTypeName: relFieldType.Name, originalKey: originalKey, relType: consts.HasOne}
 				}()
@@ -419,10 +440,17 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 
 				go func() {
 					db.GlobalLimit <- struct{}{}
-					subQuery, subQueryPkMap := query.WhereAny(originalKey, ids).LoadMap()
+					subQuery, subQueryPkMap, err := query.WhereAny(originalKey, ids).LoadMap(ctx)
 					<-db.GlobalLimit
-
-					data := q.smartHydration(relStruct, subQuery, subQueryPkMap)
+					if err != nil {
+						results <- GorutineData{Error: err}
+						return
+					}
+					data, err := q.smartHydration(ctx, relStruct, subQuery, subQueryPkMap)
+					if err != nil {
+						results <- GorutineData{Error: err}
+						return
+					}
 					dataGrouped := q.groupByKey(data, originalKey)
 					results <- GorutineData{dataGrouped: dataGrouped, relFieldTypeName: relFieldType.Name, fk: fk, relType: consts.BelongsTo}
 				}()
@@ -433,6 +461,11 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 
 	for j := 0; j < totalRelations; j++ {
 		r := <-results
+
+		if r.Error != nil {
+			return nil, r.Error
+		}
+
 		switch r.relType {
 		case consts.HasMany:
 			q.placeHasMany(structData, r.dataGrouped, r.originalKey, r.relFieldTypeName)
@@ -443,15 +476,21 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 		}
 	}
 
-	return structData
+	return structData, nil
 
 }
 
-func (q *Query[T]) Load() []T {
+func (q *Query[T]) Load(ctx context.Context) ([]T, error) {
 	var model T
-	parentData, parentPkMap := q.LoadMap()
-	data := q.smartHydration(&model, parentData, parentPkMap)
-	return q.reflectSliceToSlice(data)
+	parentData, parentPkMap, err := q.LoadMap(ctx)
+	if err != nil {
+		return []T{}, err
+	}
+	data, err := q.smartHydration(ctx, &model, parentData, parentPkMap)
+	if err != nil {
+		return nil, err
+	}
+	return q.reflectSliceToSlice(data), nil
 }
 
 func (q *Query[T]) With(field string, closure func(*Query[T])) *Query[T] {

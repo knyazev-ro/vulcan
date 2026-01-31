@@ -1,6 +1,7 @@
 package vulcan
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -8,7 +9,7 @@ import (
 	"github.com/knyazev-ro/vulcan/utils"
 )
 
-func (q *Query[T]) Insert(cols []string, values [][]any) bool {
+func (q *Query[T]) Insert(ctx context.Context, cols []string, values [][]any) (int64, error) {
 	valuesStrContainer := []string{}
 	for _, val := range values {
 		valQ := []string{}
@@ -27,19 +28,19 @@ func (q *Query[T]) Insert(cols []string, values [][]any) bool {
 	q.fillBindingsPSQL()
 
 	db := db.DB // предполагаем, что db.DB — это *sql.DB
-	res, err := db.Exec(q.fullStatement, q.Bindings...)
+	res, err := db.ExecContext(ctx, q.fullStatement, q.Bindings...)
 	if err != nil {
-		panic(err)
+		return 0, err
 	}
 
 	// Опционально: количество вставленных строк
 	affected, err := res.RowsAffected()
 	if err != nil {
-		panic(err)
+		return 0, err
 	}
 
 	fmt.Printf("Inserted %d rows\n", affected)
-	return affected > 0
+	return affected, nil
 }
 
 func (q *Query[T]) valuesFilledWithQuestions(values []any) []string {
@@ -53,7 +54,7 @@ func (q *Query[T]) valuesFilledWithQuestions(values []any) []string {
 	return questions
 }
 
-func (q *Query[T]) Create(keyvals map[string]any) *Query[T] {
+func (q *Query[T]) Create(ctx context.Context, keyvals map[string]any) error {
 	values := []any{}
 	cols := []string{}
 	for k, v := range keyvals {
@@ -71,9 +72,9 @@ func (q *Query[T]) Create(keyvals map[string]any) *Query[T] {
 	q.fillBindingsPSQL()
 
 	db := db.DB // предполагаем, что db.DB — это *sql.DB
-	res, err := db.Exec(q.fullStatement, q.Bindings...)
+	res, err := db.ExecContext(ctx, q.fullStatement, q.Bindings...)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	lastID, err := res.LastInsertId()
@@ -81,5 +82,5 @@ func (q *Query[T]) Create(keyvals map[string]any) *Query[T] {
 		fmt.Printf("Inserted row ID: %d\n", lastID)
 	}
 
-	return q
+	return nil
 }

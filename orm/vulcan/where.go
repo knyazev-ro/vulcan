@@ -1,6 +1,7 @@
 package vulcan
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/knyazev-ro/vulcan/utils"
@@ -84,13 +85,16 @@ func (q *Query[T]) WhereAny(col string, values []any) *Query[T] {
 }
 
 // return Model and bool - true - exists, false - not
-func (q *Query[T]) FindById(id int64) (T, bool) {
+func (q *Query[T]) FindById(ctx context.Context, id int64) (T, bool, error) {
 	Id := fmt.Sprintf("%s.id", q.Model.TableName)
 	q.Where(Id, "=", id)
-	Ts := q.Load()
-	if len(Ts) >= 1 {
-		return Ts[0], true
-	}
+	Ts, err := q.Load(ctx)
 	var empty T
-	return empty, false
+	if err != nil {
+		return empty, false, err
+	}
+	if len(Ts) >= 1 {
+		return Ts[0], true, nil
+	}
+	return empty, false, nil
 }

@@ -1,34 +1,38 @@
 package vulcan
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/knyazev-ro/vulcan/orm/db"
 )
 
-func (q *Query[T]) Delete() bool {
+func (q *Query[T]) Delete(ctx context.Context) (int64, error) {
 	q.joinExp = ""
 	q.fullStatement = fmt.Sprintf(`DELETE FROM %s`, q.Model.TableName)
 	q.appendExpressions()
 	q.fillBindingsPSQL()
 	db := db.DB // предполагаем, что db.DB — это *sql.DB
-	res, err := db.Exec(q.fullStatement, q.Bindings...)
+	res, err := db.ExecContext(ctx, q.fullStatement, q.Bindings...)
 	if err != nil {
-		panic(err)
+		return 0, err
 	}
 
 	// Опционально: количество удалённых строк
 	affected, err := res.RowsAffected()
 	if err != nil {
-		panic(err)
+		return 0, err
 	}
 
 	fmt.Printf("Deleted %d rows\n", affected)
-	return affected > 0
+	return affected, nil
 }
 
-func (q *Query[T]) DeleteById(id int64) bool {
+func (q *Query[T]) DeleteById(ctx context.Context, id int64) (bool, error) {
 	q.Where("id", "=", id)
-	q.Delete()
-	return true
+	aff, err := q.Delete(ctx)
+	if err != nil {
+		return false, err
+	}
+	return aff > 0, nil
 }

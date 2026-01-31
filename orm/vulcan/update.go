@@ -1,13 +1,14 @@
 package vulcan
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/knyazev-ro/vulcan/orm/db"
 )
 
-func (q *Query[T]) Update(values map[string]any) bool {
+func (q *Query[T]) Update(ctx context.Context, values map[string]any) error {
 	sets := []string{}
 	binds := []any{}
 	for i, v := range values {
@@ -32,15 +33,15 @@ func (q *Query[T]) Update(values map[string]any) bool {
 	db := db.DB // предполагаем, что db.DB — это *sql.DB
 	res, err := db.Exec(q.fullStatement, q.Bindings...)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	affected, err := res.RowsAffected()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	fmt.Printf("Update affected %d rows\n", affected)
 
-	return true
+	return nil
 }
