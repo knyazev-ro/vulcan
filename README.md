@@ -369,11 +369,12 @@ Model relations, if present, are now loaded **concurrently using goroutines**.
 
 ## Project Status
 
-| Component        | Status        | Notes |
-|------------------|---------------|-------|
-| Query Builder    | Implemented   | Stable |
-| ORM Layer        | Implemented   | Core functionality complete |
-| Relations        | Implemented   | Fully supported |
-| NULL Support     | Implemented   | Ptr Go idiomatic |
-| Context Support  | In progress   | API may change |
-| `GROUP BY`       | testing       | now is functioning, but needs more tests |
+| Component                                 | Status        | Notes |
+|-------------------------------------------|---------------|-------|
+| Query Builder All Base Features For DB    | Implemented   | Stable |
+| ORM Layer                                 | Implemented   | Core functionality complete |
+| Relations                                 | Implemented   | Fully supported |
+| NULL Support                              | Implemented   | Ptr Go idiomatic |
+| `GROUP BY`                                | implemented   | more tests! |
+| Semaphore                                 | implemented   | more tests! |
+| Context Support                           | implemented   | more tests! |
