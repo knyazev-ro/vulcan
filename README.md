@@ -347,15 +347,6 @@ Model relations, if present, are now loaded **concurrently using goroutines**.
 
 ---
 
-### Highlights
-
-* **Up to ~10× faster than Laravel Eloquent** on relational workloads
-* **~2× faster than GORM** on large dataset reads
-* Eliminates PostgreSQL **65k parameter limit**
-* Scales better with complex relation graphs
-
----
-
 ### So…
 
 * Vulcan outperforms GORM in **both flat and relational workloads**
@@ -364,6 +355,17 @@ Model relations, if present, are now loaded **concurrently using goroutines**.
 * Best result: **~2× faster** on heavy relations, **~2.5× faster** on full table scans
 
 ---
+
+## Endurance Test (500 Iterations)
+
+**Test:** 23,000 records with 8 relations (7 × `belongsTo`, 1 × `hasMany`)  
+**Source:** [github.com/knyazev-ro/vulcan/tests](https://github.com/knyazev-ro/vulcan/tests)  
+**Configuration:** Semaphore 100, PostgreSQL connections 100  
+
+| Iterations | Records per Iteration | Relations | Total Records Processed | Total Time | Concurrency | Notes |
+|------------|---------------------|-----------|------------------------|------------|-------------|-------|
+| 500        | 23,000              | 8 (7 `belongsTo`, 1 `hasMany`) | 138,000,000 (main rows + belongs tables + avg 4 has many per main row) | 221.532 s | 100 goroutines | Endurance test passed without errors |
+
 
 ## Project Status
 

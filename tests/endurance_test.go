@@ -132,13 +132,12 @@ type ReportData struct {
 func TestVulcanEndurance(t *testing.T) {
 	db.Init()
 	var wg sync.WaitGroup
-	iterations := 100
+	iterations := 500
 
 	for i := 0; i < iterations; i++ {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			// Твой обычный вызов Load()
 			_, err := vulcan.NewQuery[ReportData]().Load(context.Background())
 			if err != nil {
 				fmt.Printf("Ошибка в запросе %d: %v\n", id, err)
