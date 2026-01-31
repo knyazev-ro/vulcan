@@ -374,4 +374,4 @@ Model relations, if present, are now loaded **concurrently using goroutines**.
 | Relations        | Implemented   | Fully supported |
 | NULL Support     | Implemented   | Ptr Go idiomatic |
 | Context Support  | In progress   | API may change |
-| `GROUP BY`       | In progress   | Planned |
+| `GROUP BY`       | testing       | now is functioning, but needs more tests |
