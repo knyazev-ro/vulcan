@@ -335,6 +335,8 @@ func (q *Query[T]) smartHydration(ctx context.Context, model interface{}, parent
 		structData = append(structData, newStruct)
 	}
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	totalRelations := q.CountRelations(model)
 	results := make(chan GorutineData, totalRelations)
 
@@ -371,6 +373,7 @@ func (q *Query[T]) smartHydration(ctx context.Context, model interface{}, parent
 					<-db.GlobalLimit
 
 					if err != nil {
+						cancel()
 						results <- GorutineData{Error: err}
 						return
 					}
@@ -379,6 +382,7 @@ func (q *Query[T]) smartHydration(ctx context.Context, model interface{}, parent
 					data, err := q.smartHydration(ctx, relStruct, subQuery, subQueryPkMap)
 
 					if err != nil {
+						cancel()
 						results <- GorutineData{Error: err}
 						return
 					}
@@ -405,12 +409,14 @@ func (q *Query[T]) smartHydration(ctx context.Context, model interface{}, parent
 					subQuery, subQueryPkMap, err := query.WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap(ctx)
 					<-db.GlobalLimit
 					if err != nil {
+						cancel()
 						results <- GorutineData{Error: err}
 						return
 					}
 					data, err := q.smartHydration(ctx, relStruct, subQuery, subQueryPkMap)
 
 					if err != nil {
+						cancel()
 						results <- GorutineData{Error: err}
 						return
 					}
@@ -443,11 +449,13 @@ func (q *Query[T]) smartHydration(ctx context.Context, model interface{}, parent
 					subQuery, subQueryPkMap, err := query.WhereAny(originalKey, ids).LoadMap(ctx)
 					<-db.GlobalLimit
 					if err != nil {
+						cancel()
 						results <- GorutineData{Error: err}
 						return
 					}
 					data, err := q.smartHydration(ctx, relStruct, subQuery, subQueryPkMap)
 					if err != nil {
+						cancel()
 						results <- GorutineData{Error: err}
 						return
 					}
