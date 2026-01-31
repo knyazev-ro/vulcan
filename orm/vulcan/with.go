@@ -368,9 +368,17 @@ func (q *Query[T]) smartHydration(ctx context.Context, model interface{}, parent
 				}
 
 				go func() {
-					db.GlobalLimit <- struct{}{}
+					select {
+					case <-ctx.Done():
+						results <- GorutineData{Error: ctx.Err()}
+						return
+					case db.GlobalLimit <- struct{}{}:
+						// Wait...
+					}
+
+					defer func() { <-db.GlobalLimit }()
+
 					subQuery, subQueryPkMap, err := query.WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap(ctx)
-					<-db.GlobalLimit
 
 					if err != nil {
 						cancel()
@@ -388,7 +396,12 @@ func (q *Query[T]) smartHydration(ctx context.Context, model interface{}, parent
 					}
 					// Группируем данные
 					dataGrouped := q.groupByKey(data, fk)
-					results <- GorutineData{dataGrouped: dataGrouped, relFieldTypeName: relFieldType.Name, originalKey: originalKey, relType: consts.HasMany}
+					results <- GorutineData{
+						dataGrouped:      dataGrouped,
+						relFieldTypeName: relFieldType.Name,
+						originalKey:      originalKey,
+						relType:          consts.HasMany,
+					}
 				}()
 				// Выполняем вставку по полям родителя в соответсвующий relation в памяти
 				// q.placeHasMany(structData, dataGrouped, originalKey, relFieldType.Name)
@@ -405,9 +418,18 @@ func (q *Query[T]) smartHydration(ctx context.Context, model interface{}, parent
 				}
 
 				go func() {
-					db.GlobalLimit <- struct{}{}
+					select {
+					case <-ctx.Done():
+						results <- GorutineData{Error: ctx.Err()}
+						return
+					case db.GlobalLimit <- struct{}{}:
+						// Wait...
+					}
+
+					defer func() { <-db.GlobalLimit }()
+
 					subQuery, subQueryPkMap, err := query.WhereAny(fk, parentPkMap[originalKeyFormatted]).LoadMap(ctx)
-					<-db.GlobalLimit
+
 					if err != nil {
 						cancel()
 						results <- GorutineData{Error: err}
@@ -421,7 +443,12 @@ func (q *Query[T]) smartHydration(ctx context.Context, model interface{}, parent
 						return
 					}
 					dataGrouped := q.groupByKey(data, fk)
-					results <- GorutineData{dataGrouped: dataGrouped, relFieldTypeName: relFieldType.Name, originalKey: originalKey, relType: consts.HasOne}
+					results <- GorutineData{
+						dataGrouped:      dataGrouped,
+						relFieldTypeName: relFieldType.Name,
+						originalKey:      originalKey,
+						relType:          consts.HasOne,
+					}
 				}()
 
 				// q.placeHasOne(structData, dataGrouped, originalKey, relFieldType.Name)
@@ -445,9 +472,18 @@ func (q *Query[T]) smartHydration(ctx context.Context, model interface{}, parent
 				}
 
 				go func() {
-					db.GlobalLimit <- struct{}{}
+					select {
+					case <-ctx.Done():
+						results <- GorutineData{Error: ctx.Err()}
+						return
+					case db.GlobalLimit <- struct{}{}:
+						// Wait...
+					}
+
+					defer func() { <-db.GlobalLimit }()
+
 					subQuery, subQueryPkMap, err := query.WhereAny(originalKey, ids).LoadMap(ctx)
-					<-db.GlobalLimit
+
 					if err != nil {
 						cancel()
 						results <- GorutineData{Error: err}
@@ -460,7 +496,11 @@ func (q *Query[T]) smartHydration(ctx context.Context, model interface{}, parent
 						return
 					}
 					dataGrouped := q.groupByKey(data, originalKey)
-					results <- GorutineData{dataGrouped: dataGrouped, relFieldTypeName: relFieldType.Name, fk: fk, relType: consts.BelongsTo}
+					results <- GorutineData{
+						dataGrouped:      dataGrouped,
+						relFieldTypeName: relFieldType.Name,
+						fk:               fk,
+						relType:          consts.BelongsTo}
 				}()
 				// q.placeBelongsTo(structData, dataGrouped, fk, relFieldType.Name)
 			}
