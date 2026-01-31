@@ -337,7 +337,7 @@ Model relations, if present, are now loaded **concurrently using goroutines**.
 ### Case 2 — Heavy relations load
 
 **Dataset:** 62,000 records
-**Relations:** 8 × `belongsTo`, 1 × `hasMany`
+**Relations:** 7 × `belongsTo`, 1 × `hasMany`
 **Baseline:** GORM (1.57 s)
 
 | ORM        | Time       | Speedup          | Notes                        |
