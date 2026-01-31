@@ -47,6 +47,10 @@ func (q *Query[T]) LoadMap() ([]map[string]any, map[string][]any) {
 		}
 
 		for _, pkCol := range pkCols {
+			_, e := colsMap[pkCol]
+			if !e {
+				continue
+			}
 			pkMap[pkCol] = append(pkMap[pkCol], colsMap[pkCol])
 		}
 
@@ -265,28 +269,40 @@ func (q *Query[T]) smartHydration(model interface{}, parentData []map[string]any
 			tagType := ""
 			tableTag := ""
 			col := ""
+			agg := ""
 			if !ex {
 				fieldType := newStruct.Type().Field(j)
 				tagType = fieldType.Tag.Get("type")
 				tableTag = fieldType.Tag.Get("table")
 				col = fieldType.Tag.Get("col")
+				agg = fieldType.Tag.Get("agg")
 
 				cachedTags[j] = map[string]string{
 					"tagType":  tagType,
 					"tableTag": tableTag,
 					"col":      col,
+					"agg":      agg,
 				}
 
 			} else {
 				tagType = cTags["tagType"]
 				tableTag = cTags["tableTag"]
 				col = cTags["col"]
+				agg = cTags["agg"]
 			}
 
 			if tagType == "column" {
 
 				colKey := ""
 				if cachedCols[j] == "" {
+
+					if col == "*" {
+						col = "all"
+					}
+
+					if agg != "" {
+						col = fmt.Sprintf(`%s_%s`, col, agg)
+					}
 
 					colKey = fmt.Sprintf("%s_%s", TableName, col)
 					if tableTag != "" {

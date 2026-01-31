@@ -22,6 +22,7 @@ type Query[T any] struct {
 	usingExp      string
 	limitExp      string
 	offsetExp     string
+	groupByExp    string
 	fullStatement string
 	whereHasMap   map[string]func(*Query[T])
 }
@@ -34,7 +35,7 @@ func NewQuery[T any]() *Query[T] {
 }
 
 func (q *Query[T]) SelectFromStruct(i interface{}) *Query[T] {
-	cols := q.generateCols(i, []string{})
+	cols := q.generateCols(i, &GenerateColsOptions{useAggs: true})
 	if len(cols) > 0 {
 		q.selectRaw(cols)
 	}
@@ -92,6 +93,11 @@ func (q *Query[T]) appendExpressions() {
 
 	if q.whereExp != "" {
 		q.fullStatement += " WHERE " + strings.Trim(q.whereExp, " ")
+		q.fullStatement = strings.Trim(q.fullStatement, " ")
+	}
+
+	if q.groupByExp != "" {
+		q.fullStatement += " " + strings.Trim(q.groupByExp, " ")
 		q.fullStatement = strings.Trim(q.fullStatement, " ")
 	}
 

@@ -247,6 +247,12 @@ func ExamplesORM() {
 
 func RealExampleORM() {
 
+	type ReportWithAggCount struct {
+		_      string `type:"metadata" table:"reports" pk:"id"`
+		Status string `type:"column" col:"status"`
+		Count  int64  `type:"column" col:"*" agg:"count"`
+	}
+
 	type Report struct {
 		_  string `type:"metadata" table:"reports" pk:"id"`
 		Id int64  `type:"column" col:"id"`
@@ -378,7 +384,9 @@ func RealExampleORM() {
 	start = time.Now()
 	q1 := vulcan.NewQuery[ReportData]().Load()
 	end = time.Now()
-	fmt.Println(end.Sub(start), q1[256].CompGroup.CompGroupName, len(q1), *q1[0].Report.ParseErrorMessage)
-	// fmt.Println(vulcan.NewQuery[Report]().FindById(5))
+	fmt.Println(end.Sub(start), q1[256].CompGroup.CompGroupName, len(q1))
+	fmt.Println(vulcan.NewQuery[Report]().FindById(5))
+
+	// fmt.Println(vulcan.NewQuery[ReportWithAggCount]().Load())
 
 }

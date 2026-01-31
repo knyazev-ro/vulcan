@@ -7,7 +7,45 @@ import (
 	"github.com/knyazev-ro/vulcan/orm/model"
 )
 
-func (q *Query[T]) generateCols(i interface{}, cols []string) []string {
+type GenerateColStringStruct struct {
+	TableName string
+	ColTag    string
+	AggTag    string
+}
+
+type GenerateColsOptions struct {
+	useAggs bool
+}
+
+func (q *Query[T]) generateColString(data *GenerateColStringStruct) (string, string, string) {
+	colTag := "all"
+	if data.ColTag != "*" {
+		colTag = data.ColTag
+	}
+	original := fmt.Sprintf(`"%s"."%s"`, data.TableName, data.ColTag)
+
+	if data.ColTag == "*" {
+		original = "*"
+	}
+
+	as := fmt.Sprintf(`%s_%s`, data.TableName, colTag)
+	alias := fmt.Sprintf(`%s AS %s`, original, as)
+	switch data.AggTag {
+	case "sum":
+		alias = fmt.Sprintf(`SUM(%s) AS %s_sum`, original, as)
+	case "avg":
+		alias = fmt.Sprintf(`AVG(%s) AS %s_avg`, original, as)
+	case "max":
+		alias = fmt.Sprintf(`MAX(%s) AS %s_max`, original, as)
+	case "count":
+		alias = fmt.Sprintf(`COUNT(%s) AS %s_count`, original, as)
+	default:
+	}
+	return alias, as, original
+}
+
+func (q *Query[T]) generateCols(i interface{}, options *GenerateColsOptions) []string {
+	cols := []string{}
 	val := reflect.ValueOf(i)
 	if val.Kind() == reflect.Ptr && val.Elem().Kind() == reflect.Struct {
 		val = val.Elem()
@@ -20,25 +58,52 @@ func (q *Query[T]) generateCols(i interface{}, cols []string) []string {
 	}
 	TableName := metadata.Tag.Get("table")
 
+	originalColsForAgg := []string{}
+	shouldGroup := false
+
 	for i := range val.NumField() {
 		valueType := val.Type().Field(i)
 		typeTag := valueType.Tag.Get("type")
-
 		if typeTag == "column" {
+			aggTag := valueType.Tag.Get("agg")
 			colTag := valueType.Tag.Get("col")
 			tableTag := valueType.Tag.Get("table")
+
+			if !options.useAggs {
+				aggTag = ""
+			}
+
 			if tableTag == "" {
-				cols = append(cols, fmt.Sprintf(`"%s"."%s" AS %s_%s`, TableName, colTag, TableName, colTag))
+
+				if aggTag != "" {
+					shouldGroup = true
+				} else {
+					originalColsForAgg = append(originalColsForAgg, fmt.Sprintf(`%s.%s`, TableName, colTag))
+				}
+				alias, _, _ := q.generateColString(&GenerateColStringStruct{TableName: TableName, ColTag: colTag, AggTag: aggTag})
+				cols = append(cols, alias)
 			} else {
-				cols = append(cols, fmt.Sprintf(`"%s"."%s" AS %s_%s`, tableTag, colTag, tableTag, colTag))
+				if aggTag != "" {
+					shouldGroup = true
+				} else {
+					originalColsForAgg = append(originalColsForAgg, fmt.Sprintf(`%s.%s`, tableTag, colTag))
+				}
+				alias, _, _ := q.generateColString(&GenerateColStringStruct{TableName: tableTag, ColTag: colTag, AggTag: aggTag})
+				cols = append(cols, alias)
+
 			}
 		}
 	}
+
+	if shouldGroup {
+		q.GroupBy(originalColsForAgg)
+	}
+
 	return cols
 }
 
 func (q *Query[T]) MSelect(i interface{}) *Query[T] {
-	cols := q.generateCols(i, []string{})
+	cols := q.generateCols(i, &GenerateColsOptions{useAggs: true})
 	metadata, ok := reflect.TypeOf(i).Elem().FieldByName("_")
 	if !ok {
 		panic("metadata is not found")
@@ -52,38 +117,3 @@ func (q *Query[T]) MSelect(i interface{}) *Query[T] {
 	}
 	return q
 }
-
-// func (q *Query[T]) DeprectedGet() []T {
-// 	db := db.DB
-// 	println(q.SQL())
-// 	rows, err := db.Query(q.fullStatement, q.Bindings...)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	defer rows.Close()
-
-// 	cols, _ := rows.Columns()
-// 	fmt.Println(rows.Columns())
-// 	mapData := []map[string]any{}
-// 	for rows.Next() {
-
-// 		colValues := make([]any, len(cols))
-// 		colPtrs := make([]any, len(cols))
-// 		colsMap := map[string]any{}
-
-// 		for i := range colValues {
-// 			colPtrs[i] = &colValues[i]
-// 		}
-// 		if err := rows.Scan(colPtrs...); err != nil {
-// 			panic(err)
-// 		}
-
-// 		for i, col := range cols {
-// 			colsMap[col] = colValues[i]
-// 		}
-// 		mapData = append(mapData, colsMap)
-// 	}
-
-// 	return q.Hydration(mapData)
-// }
