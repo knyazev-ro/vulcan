@@ -8,7 +8,7 @@ import (
 	"github.com/knyazev-ro/vulcan/config"
 )
 
-var GlobalLimit = make(chan struct{}, 100)
+var GlobalLimit chan struct{}
 var DB *sql.DB
 
 func Init() {
@@ -16,10 +16,16 @@ func Init() {
 	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/%s", config.Driver, config.User, config.Password, config.Host, config.Port, config.Database)
 
 	db, err := sql.Open("pgx", dsn) // pgx через database/sql
-	db.SetMaxOpenConns(100)
 	if err != nil {
 		panic(err)
 	}
+
+	GlobalLimit = make(chan struct{}, config.SemaphoreLimit)
+
+	db.SetMaxOpenConns(config.MaxOpenConns)
+	db.SetMaxIdleConns(config.MaxIdleConns)
+	db.SetConnMaxLifetime(config.ConnMaxLifetime)
+	db.SetConnMaxIdleTime(config.ConnMaxIdleTime)
 
 	// Проверяем соединение
 	if err := db.Ping(); err != nil {
