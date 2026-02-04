@@ -406,7 +406,10 @@ func RealExampleORM() {
 		if err != nil {
 			return err
 		}
-		query.Load(ctx)
+		reports, err = query.Load(ctx)
+		if err != nil {
+			return err
+		}
 		return nil
 	})
 
