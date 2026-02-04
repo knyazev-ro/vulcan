@@ -126,12 +126,6 @@ func (q *Query[T]) SQL() string {
 	return q.fullStatement
 }
 
-// опасно
-func (q *Query[T]) RawSQL(v string) *Query[T] {
-	q.fullStatement = v
-	return q
-}
-
 func (q *Query[T]) fillBindingsPSQL() {
 	var b strings.Builder
 	b.Grow(len(q.fullStatement) + 16)
