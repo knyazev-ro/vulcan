@@ -39,6 +39,9 @@ func (q *Query[T]) groupByKey(data []reflect.Value, key string) map[any][]reflec
 
 // Вставляет массив в поле массив для отношений Имеет Много (HasMany)
 func (q *Query[T]) placeHasMany(parent []reflect.Value, grouped map[any][]reflect.Value, originalkey string, fieldName string) {
+	if len(parent) <= 0 {
+		return
+	}
 	example := parent[0]
 	originalKeyFieldName := ""
 	for i := 0; i < example.NumField(); i++ {
@@ -71,6 +74,9 @@ func (q *Query[T]) placeHasMany(parent []reflect.Value, grouped map[any][]reflec
 
 // Вставляет поле-структуру, реализует логику для HasOne
 func (q *Query[T]) placeHasOne(parent []reflect.Value, grouped map[any][]reflect.Value, originalkey string, fieldName string) {
+	if len(parent) <= 0 {
+		return
+	}
 	example := parent[0]
 	originalKeyFieldName := ""
 	for i := 0; i < example.NumField(); i++ {
@@ -97,6 +103,9 @@ func (q *Query[T]) placeHasOne(parent []reflect.Value, grouped map[any][]reflect
 // Вставляет поле-структуру, реализует логику для BelongsTo
 func (q *Query[T]) placeBelongsTo(parent []reflect.Value, grouped map[any][]reflect.Value, fk string, fieldName string) {
 	// Находим у сущности поле связывающее его с родителем
+	if len(parent) <= 0 {
+		return
+	}
 	example := parent[0]
 	fkFieldName := ""
 	for i := 0; i < example.NumField(); i++ {
