@@ -138,7 +138,7 @@ func TestVulcanEndurance(t *testing.T) {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			_, err := vulcan.NewQuery[ReportData]().Load(context.Background())
+			_, err := vulcan.NewQuery[ReportData]().CLoad(context.Background())
 			if err != nil {
 				fmt.Printf("Ошибка в запросе %d: %v\n", id, err)
 			}

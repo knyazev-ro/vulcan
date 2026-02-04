@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-
-	"github.com/knyazev-ro/vulcan/orm/db"
 )
 
 func (q *Query[T]) Update(ctx context.Context, values map[string]any) error {
@@ -30,8 +28,8 @@ func (q *Query[T]) Update(ctx context.Context, values map[string]any) error {
 	q.appendExpressions()
 	q.fillBindingsPSQL()
 	fmt.Println(q.SQL())
-	db := db.DB // предполагаем, что db.DB — это *sql.DB
-	res, err := db.Exec(q.fullStatement, q.Bindings...)
+
+	res, err := q.db.ExecContext(ctx, q.fullStatement, q.Bindings...)
 	if err != nil {
 		return err
 	}

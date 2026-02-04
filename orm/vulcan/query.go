@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // драйвер для database/sql
+	"github.com/knyazev-ro/vulcan/orm/db"
 	"github.com/knyazev-ro/vulcan/orm/model"
 )
 
@@ -25,10 +26,13 @@ type Query[T any] struct {
 	groupByExp    string
 	fullStatement string
 	whereHasMap   map[string]func(*Query[T])
+
+	db DBConnection
 }
 
 func NewQuery[T any]() *Query[T] {
 	q := &Query[T]{}
+	q.db = db.DB
 	var i T
 	q.MSelect(&i)
 	return q

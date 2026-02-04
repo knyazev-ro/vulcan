@@ -88,7 +88,7 @@ func (q *Query[T]) WhereAny(col string, values []any) *Query[T] {
 func (q *Query[T]) FindById(ctx context.Context, id int64) (T, bool, error) {
 	Id := fmt.Sprintf("%s.id", q.Model.TableName)
 	q.Where(Id, "=", id)
-	Ts, err := q.Load(ctx)
+	Ts, err := q.CLoad(ctx)
 	var empty T
 	if err != nil {
 		return empty, false, err

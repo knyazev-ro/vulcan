@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/knyazev-ro/vulcan/orm/db"
 	"github.com/knyazev-ro/vulcan/utils"
 )
 
@@ -26,9 +25,7 @@ func (q *Query[T]) Insert(ctx context.Context, cols []string, values [][]any) (i
 	statement := fmt.Sprintf(`INSERT INTO %s %s VALUES %s;`, q.Model.TableName, colsStr, valuesStrContainerJoin)
 	q.fullStatement = statement
 	q.fillBindingsPSQL()
-
-	db := db.DB // предполагаем, что db.DB — это *sql.DB
-	res, err := db.ExecContext(ctx, q.fullStatement, q.Bindings...)
+	res, err := q.db.ExecContext(ctx, q.fullStatement, q.Bindings...)
 	if err != nil {
 		return 0, err
 	}
@@ -71,8 +68,7 @@ func (q *Query[T]) Create(ctx context.Context, keyvals map[string]any) error {
 	q.fullStatement = statement
 	q.fillBindingsPSQL()
 
-	db := db.DB // предполагаем, что db.DB — это *sql.DB
-	res, err := db.ExecContext(ctx, q.fullStatement, q.Bindings...)
+	res, err := q.db.ExecContext(ctx, q.fullStatement, q.Bindings...)
 	if err != nil {
 		return err
 	}

@@ -44,7 +44,7 @@ func ExamplesQuery() {
 	// Примеры Load
 	users, err := vulcan.NewQuery[UserTest]().
 		OrderBy([]string{"id"}, "desc").
-		Load(ctx)
+		CLoad(ctx)
 	if err != nil {
 		fmt.Println("Load error:", err)
 	} else {
@@ -54,7 +54,7 @@ func ExamplesQuery() {
 	users, err = vulcan.NewQuery[UserTest]().
 		Where("id", ">", 1).
 		Where("id", "!=", 3).
-		Load(ctx)
+		CLoad(ctx)
 	if err != nil {
 		fmt.Println("Load error:", err)
 	} else {
@@ -206,7 +206,7 @@ func ExamplesORM() {
 
 	// Load всех пользователей
 	start := time.Now()
-	users, err := vulcan.NewQuery[UserTest]().Load(ctx)
+	users, err := vulcan.NewQuery[UserTest]().CLoad(ctx)
 	end := time.Now()
 	if err != nil {
 		fmt.Println("Load error:", err)
@@ -398,13 +398,13 @@ func RealExampleORM() {
 
 	// Load всех записей
 	start := time.Now()
-	reports, err := vulcan.NewQuery[ReportData]().Load(ctx)
+	reports, err := vulcan.NewQuery[ReportData]().CLoad(ctx)
 	end := time.Now()
 	if err != nil {
 		fmt.Println("Load error:", err)
 	}
 	fmt.Println("Duration:", end.Sub(start))
 	fmt.Println("Loaded reports:", len(reports))
-	// fmt.Println(vulcan.NewQuery[ReportWithAggCount]().Load())
+	// fmt.Println(vulcan.NewQuery[ReportWithAggCount]().CLoad())
 
 }

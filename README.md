@@ -57,7 +57,7 @@ vulcan.NewQuery[UserTest]().
     Where("id", ">", 1).
     Where("id", "!=", 3).
     OrderBy([]string{"id"}, "desc").
-    Load()
+    CLoad()
 ```
 
 `Select` is now optional — by default, the column list is generated from the struct, and this is the **preferred approach**.
@@ -186,7 +186,7 @@ type UserTest struct {
 Query:
 
 ```go
-vulcan.NewQuery[UserTest]().Load()
+vulcan.NewQuery[UserTest]().CLoad()
 ```
 
 Vulcan automatically generates **4 queries**
