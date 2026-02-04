@@ -17,7 +17,7 @@ func (q *Query[T]) UseConn(db DBConnection) (*Query[T], error) {
 	return q, nil
 }
 
-func (q *Query[T]) Transaction(ctx context.Context, closure func(tx *sql.Tx) error) error {
+func Transaction(ctx context.Context, closure func(tx *sql.Tx) error) error {
 
 	tx, err := db.DB.BeginTx(ctx, nil)
 	if err != nil {

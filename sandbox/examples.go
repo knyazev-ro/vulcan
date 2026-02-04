@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -396,15 +397,43 @@ func RealExampleORM() {
 		fmt.Println("Report not found")
 	}
 
-	// Load всех записей
+	// Load no gorutines in transaction
+	fmt.Println("SYNC LOAD! USE 'LOAD()'")
 	start := time.Now()
-	reports, err := vulcan.NewQuery[ReportData]().CLoad(ctx)
+	var reports []ReportData
+	err = vulcan.Transaction(ctx, func(tx *sql.Tx) error {
+		query, err := vulcan.NewQuery[ReportData]().UseConn(tx)
+		if err != nil {
+			return err
+		}
+		query.Load(ctx)
+		return nil
+	})
+
+	if err != nil {
+		fmt.Println("Error: ", err.Error())
+		return
+	}
+
 	end := time.Now()
 	if err != nil {
 		fmt.Println("Load error:", err)
 	}
 	fmt.Println("Duration:", end.Sub(start))
 	fmt.Println("Loaded reports:", len(reports))
+
+	// Load всех записей
+	fmt.Println("CONCURRENT LOAD! USE 'CLOAD()'")
+
+	start = time.Now()
+	reports, err = vulcan.NewQuery[ReportData]().CLoad(ctx)
+	end = time.Now()
+	if err != nil {
+		fmt.Println("Load error:", err)
+	}
+	fmt.Println("Duration:", end.Sub(start))
+	fmt.Println("Loaded reports:", len(reports))
+
 	// fmt.Println(vulcan.NewQuery[ReportWithAggCount]().CLoad())
 
 }
