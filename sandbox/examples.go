@@ -160,6 +160,11 @@ func ExamplesORM() {
 	} else {
 		fmt.Println("Deleted users with posts.name like %A%")
 	}
+
+	_, err = vulcan.NewQuery[UserTest]().Where("name", "like", "%Duran%").Delete(ctx)
+	if err != nil {
+		fmt.Println("Erro when deleting Duran: ", err.Error())
+	}
 }
 
 func Aggregations() {
