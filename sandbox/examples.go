@@ -12,6 +12,7 @@ import (
 
 func RealExampleORM() {
 	db.Init()
+
 	type ReportWithAggCount struct {
 		_      string `type:"metadata" table:"reports" pk:"id"`
 		Status string `type:"column" col:"status"`
@@ -19,9 +20,8 @@ func RealExampleORM() {
 	}
 
 	type Report struct {
-		_  string `type:"metadata" table:"reports" pk:"id"`
-		Id int64  `type:"column" col:"id"`
-		// Дополнительные поля из fillable
+		_                    string  `type:"metadata" table:"reports" pk:"id"`
+		Id                   int64   `type:"column" col:"id"`
 		SystemFileId         int64   `type:"column" col:"system_file_id"`
 		DataFilePath         string  `type:"column" col:"data_file_path"`
 		Filters              string  `type:"column" col:"filters"`
