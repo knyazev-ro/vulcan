@@ -7,7 +7,7 @@ import (
 	"github.com/knyazev-ro/vulcan/utils"
 )
 
-func (q *Query[T]) Select(cols []string) *Query[T] {
+func (q *Query[T]) Select(cols ...string) *Query[T] {
 	colsSafe := utils.ColsSafe(cols)
 	colsStr := strings.Join(colsSafe, ", ")
 	selectStatement := fmt.Sprintf("SELECT %s", colsStr)
