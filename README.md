@@ -67,9 +67,9 @@ Vulcan оптимизирован для тяжелых нагрузок и бо
 | Strategy | Time | Speedup |
 | --- | --- | --- |
 | Laravel **Eloquent ORM** | 2.9 s | 1.0× |
-| **Vulcan** (Standard JOINs) | 7.0 s | 0.41× |
-| **Vulcan** (Eager Loading) | 600 ms | 4.8× faster |
-| **Vulcan (Concurrent + Optimized)** | **300 ms** | **9.7× faster** |
+| **Vulcan** (Подгрузка отношений на базе JOIN) | 7.0 s | 0.41× |
+| **Vulcan** (Имплементация отношений на базе WHERE ANY) | 600 ms | 4.8× faster |
+| **Vulcan (Горутины + оптимизация)** | **300 ms** | **9.7× faster** |
 
 ### Vulcan vs GORM (Go)
 
