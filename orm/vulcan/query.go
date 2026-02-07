@@ -34,22 +34,25 @@ func NewQuery[T any]() *Query[T] {
 	q := &Query[T]{}
 	q.db = db.DB
 	var i T
-	q.MSelect(&i)
+	q.SelectFromStruct(&i)
 	return q
 }
 
 func (q *Query[T]) SelectFromStruct(i interface{}) *Query[T] {
 	cols := q.generateCols(i, &GenerateColsOptions{useAggs: true})
-	if len(cols) > 0 {
-		q.selectRaw(cols)
-	}
 	metadata, ok := reflect.TypeOf(i).Elem().FieldByName("_")
 	if !ok {
 		panic("metadata is not found")
 	}
+	pk := metadata.Tag.Get("pk")
 	q.Model = model.Model{
 		TableName: metadata.Tag.Get("table"),
-		Pk:        metadata.Tag.Get("pk"),
+		Pk:        pk,
+		Pks:       strings.Split(pk, ","),
+	}
+
+	if len(cols) > 0 {
+		q.selectRaw(cols)
 	}
 	return q
 }

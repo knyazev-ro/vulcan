@@ -85,9 +85,14 @@ func (q *Query[T]) WhereAny(col string, values []any) *Query[T] {
 }
 
 // return Model and bool - true - exists, false - not
-func (q *Query[T]) FindById(ctx context.Context, id int64) (T, bool, error) {
-	Id := fmt.Sprintf("%s.id", q.Model.TableName)
-	q.Where(Id, "=", id)
+func (q *Query[T]) FindById(ctx context.Context, ids ...int64) (T, bool, error) {
+	pks := q.Model.Pks
+
+	for idx, pk := range pks {
+		Id := fmt.Sprintf("%s.%s", q.Model.TableName, pk)
+		q.Where(Id, "=", ids[idx])
+	}
+
 	Ts, err := q.CLoad(ctx)
 	var empty T
 	if err != nil {
