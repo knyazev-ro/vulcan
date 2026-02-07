@@ -1,380 +1,150 @@
 # **Vulcan ORM**
 
-**Vulcan ORM** is an SQL Query Builder + struct-based ORM for Go, with syntax inspired by the Laravel Query Builder.
-The project is part of the **Gerard** framework and is designed for **safe, predictable, and deterministic SQL generation**, with support for nested conditions, join operations, bindings, and PostgreSQL.
+**Vulcan ORM** — это высокопроизводительный SQL Query Builder и ORM на базе структур для Go. Синтаксис вдохновлен Laravel Query Builder, но архитектура построена на принципах **Data Mapper**.
 
-Vulcan implements the **Data Mapper** principle in the ORM world.
-Structs act as instructions describing **how data will be fetched**. This creates a convenient and explicit contract: you don’t need to execute a query to understand the shape of the result.
-The way a struct is defined *before* executing a query guarantees the structure of the output.
+> **Важно:** Это часть экосистемы **Gerard**. Подробная документация по всем методам и продвинутым техникам доступна в директории [`/docs`](https://github.com/knyazev-ro/vulcan/tree/main/docs).
 
 ---
 
-## Supported Features
+## Архитектурная философия
 
-* `SELECT`
-* `WHERE` / `OR WHERE`
-* Nested conditions via `WhereClause` / `OrWhereClause`
-* `INNER JOIN`, `LEFT JOIN`, `RIGHT JOIN`
-* `ORDER BY`
-* `LIMIT`, `OFFSET`
-* `INSERT` / `CREATE`
-* `UPDATE`
-* PostgreSQL placeholders (`$1`, `$2`, …)
-* Integration with `database/sql`
+В отличие от традиционных Active Record ORM, Vulcan реализует принцип **Data Contract**:
+
+* **Структура — это инструкция:** Модель описывает не только таблицу, но и то, как данные будут извлечены.
+* **Детерминизм:** Вы знаете форму результата еще до выполнения запроса. Изменение структуры автоматически меняет семантику SQL.
+* **Zero Over-fetching:** По умолчанию Vulcan выбирает только те колонки, которые описаны в вашей DTO.
 
 ---
 
-## ORM Features
+## Ключевые возможности
 
-Vulcan includes an ORM layer:
-
-* Automatic `SELECT` generation based on structs
-* Relation support:
-
-  * `has-many`
-  * `belongs-to`
-  * `has-one`
-  * `many-to-many` (via pivot tables)
-* Automatic preload generation
-* Recursive hydration of nested structures
-* Grouping via nested queries
+* **Concurrent Hydration:** Рекурсивная загрузка графа отношений (`CLoad`) с использованием goroutines.
+* **Smart Relations:** Поддержка `has-one`, `has-many`, `belongs-to` и `many-to-many` (pivot tables).
+* **Aggregate Relations:** Встроенная поддержка агрегаций (`count`, `sum`, `avg`, `min`, `max`) прямо в отношениях.
+* **Expressive Builder:** Вложенные условия (`WhereClause`), сложные JOIN и мутации.
+* **Performance First:** Оптимизированные запросы (`WHERE ANY`) позволяют избегать лимитов параметров PostgreSQL (65k).
 
 ---
 
-## Basic Example
+## Быстрый старт
 
-Uses generics:
+### Определение модели
 
 ```go
-type UserTest struct {
-    _        string `type:"metadata" table:"users" pk:"id"`
-    Id       int64  `type:"column" col:"id"`
-    Name     string `type:"column" col:"name"`
-    LastName string `type:"column" col:"last_name"`
-}
-
-vulcan.NewQuery[UserTest]().
-    Where("id", ">", 1).
-    Where("id", "!=", 3).
-    OrderBy([]string{"id"}, "desc").
-    CLoad()
-```
-
-`Select` is now optional — by default, the column list is generated from the struct, and this is the **preferred approach**.
-The idea is that structs define the output, so using `Select` in Vulcan is now considered legacy and will be removed in the future.
-
-Generated SQL:
-
-```sql
-SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name
-FROM users
-WHERE "users"."id" > $1 AND "users"."id" != $2
-ORDER BY "users"."id" DESC;
-```
-
-Bindings:
-
-```
-[1, 3]
-```
-
----
-
-## Nested Conditions
-
-```go
-vulcan.NewQuery[UserTest]().
-    Where("status", "=", 1).
-    WhereClause(func(q *vulcan.Query[UserTest]) {
-        q.
-            Where("age", ">", 18).
-            OrWhereClause(func(q *vulcan.Query[UserTest]) {
-                q.
-                    Where("role", "=", "admin").
-                    Where("last_login", ">", "2026-01-01")
-            })
-    }).
-    Where("active", "=", 1).
-    Build().
-    SQL()
-```
-
-Result:
-
-```sql
-SELECT "users"."id"
-FROM users
-WHERE "status" = $1
-AND ("age" > $2 OR ("role" = $3 AND "last_login" > $4))
-AND "active" = $5;
-```
-
-Bindings:
-
-```
-[1, 18, "admin", "2026-01-01", 1]
-```
-
----
-
-## JOIN (Manual Mode)
-
-In the current version, if you need a flat result structure, it is enough to declare a single struct and specify the `table:<table_name>` tag for fields mapped from related tables.
-
-```go
-q := vulcan.NewQuery[UserTest]().
-    InnerJoin("posts", func(jc *vulcan.Join) {
-        jc.On("posts.user_id", "=", "users.id")
-    }).
-    LeftJoin("categories", func(jc *vulcan.Join) {
-        jc.On("categories.id", "=", "posts.category_id")
-    }).
-    Where("users.active", "=", 1).
-    Build().
-    SQL()
-```
-
-Result:
-
-```sql
-SELECT <all fields defined in the struct>
-FROM users
-INNER JOIN posts ON posts.user_id = users.id
-LEFT JOIN categories ON categories.id = posts.category_id
-WHERE "users.active" = $1;
-```
-
----
-
-## ORM Relations
-
-Vulcan can automatically build and load related models based on **nested structs**.
-
-### Example: One-to-Many + Many-to-Many
-
-```go
-type TagTest struct {
-    _    string `type:"metadata" table:"tags" pk:"id"`
-    Id   int64  `type:"column" col:"id"`
-    Name string `type:"column" col:"name"`
-}
-
-type PostTag struct {
-    _      string  `type:"metadata" table:"post_tags" pk:"post_id,tag_id" tabletype:"pivot"`
-    PostId int64   `type:"column" col:"post_id"`
-    TagId  int64   `type:"column" col:"tag_id"`
-    Tag    TagTest `type:"relation" table:"tags" reltype:"belongs-to" fk:"tag_id" originalkey:"id"`
-}
-
-type PostTest struct {
-    _        string    `type:"metadata" table:"posts" pk:"id"`
+type User struct {
+    _        string    `type:"metadata" table:"users" pk:"id"`
     Id       int64     `type:"column" col:"id"`
     Name     string    `type:"column" col:"name"`
-    UserId   int64     `type:"column" col:"user_id"`
-    PostTags []PostTag `type:"relation" table:"post_tags" reltype:"has-many" fk:"post_id" originalkey:"id"`
+    // Отношение: Vulcan сам поймет, как собрать граф
+    Posts    []Post    `type:"relation" table:"posts" reltype:"has-many" fk:"user_id" originalkey:"id"`
 }
 
-type UserTest struct {
-    _        string     `type:"metadata" table:"users" pk:"id"`
-    Id       int64      `type:"column" col:"id"`
-    Name     string     `type:"column" col:"name"`
-    LastName string     `type:"column" col:"last_name"`
-    Posts    []PostTest `type:"relation" table:"posts" reltype:"has-many" fk:"user_id" originalkey:"id"`
-}
 ```
 
-Query:
+### Выполнение запроса
 
 ```go
-vulcan.NewQuery[UserTest]().CLoad()
-```
+ctx := context.Background()
 
-Vulcan automatically generates **4 queries**
-and assembles the result into nested structures:
+// Конкурентная загрузка пользователей и всех их постов
+users, err := vulcan.NewQuery[User]().
+    Where("active", "=", 1).
+    OrderBy("desc", "id").
+    CLoad(ctx)
 
-```
-User
- └── Posts
-      └── PostTags
-           └── Tag
 ```
 
 ---
 
-## UPDATE with JOIN
+## Benchmarks
+
+Vulcan оптимизирован для тяжелых нагрузок и больших наборов данных.
+
+### Vulcan vs Laravel Eloquent
+
+*Dataset: 23,000 records, 8 relations*
+
+| Strategy | Time | Speedup |
+| --- | --- | --- |
+| Laravel **Eloquent ORM** | 2.9 s | 1.0× |
+| **Vulcan** (Standard JOINs) | 7.0 s | 0.41× |
+| **Vulcan** (Eager Loading) | 600 ms | 4.8× faster |
+| **Vulcan (Concurrent + Optimized)** | **300 ms** | **9.7× faster** |
+
+### Vulcan vs GORM (Go)
+
+*Heavy relations load (62,000 records)*
+
+| ORM | Time | Speedup | Notes |
+| --- | --- | --- | --- |
+| **GORM** | 1.57 s | 1.0× | Slow SQL warnings |
+| **Vulcan** | **843 ms** | **1.86× faster** | Concurrent hydration |
+
+---
+
+## Продвинутые возможности
+
+### Агрегации в отношениях
+
+Vulcan автоматически группирует данные, если видит тег `agg`.
 
 ```go
-vulcan.NewQuery[UserTest]().
+type UserStats struct {
+    _          string `type:"metadata" table:"posts"`
+    TotalPosts int64  `type:"column" col:"*" agg:"count"`
+}
+
+```
+
+### Фильтрация отношений (With)
+
+Метод `With` позволяет накладывать условия на вложенные данные, не затрагивая основной запрос.
+
+```go
+q, _ := vulcan.NewQuery[User]().
+    With("Posts", func(q *vulcan.Query[User]) {
+        q.Where("status", "=", "published")
+    }).FindById(ctx, 1)
+
+```
+
+### UPDATE с JOIN
+
+```go
+vulcan.NewQuery[User]().
     From("posts").
-    On("posts.id", "=", "users.post_id").
-    Where("users.id", "=", 10).
-    LeftJoin("categories", func(jc *vulcan.Join) {
-        jc.On("categories.id", "=", "posts.category_id")
-    }).
-    Where("categories.name", "like", "%Tech%").
-    Update(map[string]any{
-        "users.role_id":  1,
-        "users.owner_id": 2,
-    })
-```
-
-Generated SQL:
-
-```sql
-UPDATE users
-SET users.role_id = $1, users.owner_id = $2
-FROM posts
-LEFT JOIN categories ON categories.id = posts.category_id
-WHERE posts.id = users.post_id
-AND users.id = $3
-AND categories.name LIKE $4;
-```
-
-Bindings:
+    On("posts.user_id", "=", "users.id").
+    Where("posts.views", ">", 1000).
+    Update(ctx, map[string]any{"is_popular": true})
 
 ```
-[1, 2, 10, "%Tech%"]
-```
 
 ---
 
-## Data Contract
+## Безопасность и ограничения
 
-A core architectural principle of Vulcan is that **entity structs are the data output contract**.
-
-This means:
-
-* Model structs define the **expected shape of query results**
-* Changing a struct automatically changes the data semantics
-* The Query Builder does not “guess” types or perform implicit mapping
-* Responsibility for correctness lies in struct definitions
-
-This approach makes the system transparent, predictable, and easy to maintain.
+* **SQL Injection:** Все значения проходят через плейсхолдеры PostgreSQL (`$1`, `$2`). Конкатенация пользовательского ввода запрещена.
+* **Диалекты:** Основная и единственная цель — **PostgreSQL**.
+* **Trusted Names:** Имена таблиц и колонок считаются доверенными (задаются в коде через теги).
 
 ---
-
-## Security
-
-* All values are passed via placeholders
-* Values are stored separately in `Bindings`
-* Concatenation of user input into SQL is forbidden
-
-> Column and table names are considered trusted, as in Laravel / GORM.
-
----
-
-## Architectural Decisions
-
-* SQL is built deterministically
-* Nested conditions are implemented via builder state control
-* Parentheses are formed logically via `WhereClause` and `OrWhereClause`
-* No AST or SQL interpretation layer
-
-This is a deliberate tradeoff between control, performance, and implementation complexity.
-
----
-
-## Limitations
-
-* No multi-dialect SQL support — PostgreSQL is the primary target
-
----
-
-## New Features
-
-New methods such as `DeleteById`, `FindById`, and most importantly in the current version — **subquery mutation support via `With`** — have been added.
-
-Currently supported:
-
-* Relation-level filtering via closures on the parent struct
-* Nested `With` calls
-
-Important note:
-The `With` method **only affects how relations are loaded**.
-Whether a relation exists in the final result is determined **by the struct**, not the query.
-
-```go
-q2, _ := vulcan.NewQuery[ReportData]().With("City", func(q *vulcan.Query[ReportData]) {
-    q.Where("city", "like", "Москва")
-}).FindById(2)
-```
-
-Model relations, if present, are now loaded **concurrently using goroutines**.
-
----
-
-## Benchmarks (Laravel Eloquent ORM vs Vulcan)
-
-**Dataset:** 23,000 records
-**Relations:** 7 × `belongsTo`, 1 × `hasMany`
-**Baseline:** Laravel Eloquent ORM (2.9 s)
-
-| ORM / Strategy                                                                   | Time   | Speedup         |
-| -------------------------------------------------------------------------------- | ------ | --------------- |
-| Laravel **Eloquent ORM**                                                         | 2.9 s  | 1.0×            |
-| **Vulcan** (v1, relations via `JOIN`)                                            | 7.0 s  | 0.41× (slower)  |
-| **Vulcan** (`WHERE ANY` eager loading)                                           | 600 ms | **4.8× faster** |
-| **Vulcan** (`WHERE ANY` + concurrent relation loading)                           | 500 ms | **5.8× faster** |
-| **CURRENT Vulcan** (`WHERE ANY` + concurrent loading, post-optimized, NULL-safe) | 300 ms | **9.7× faster** |
-
----
-
-## Benchmarks (Go ORM: GORM vs Vulcan)
-
-### Case 1 — Full load without relations
-
-**Dataset:** 107,536 records
-**Query:** `SELECT * FROM report_data`
-**Baseline:** GORM (2.27 s)
-
-| ORM        | Time       | Speedup         | Notes                                           |
-| ---------- | ---------- | --------------- | ----------------------------------------------- |
-| **GORM**   | 2.27 s     | 1.0×            | `extended protocol limited to 65535 parameters` |
-| **Vulcan** | **1.19 s** | **1.9× faster** | Full table load                                 |
-
----
-
-### Case 2 — Heavy relations load
-
-**Dataset:** 62,000 records
-**Relations:** 7 × `belongsTo`, 1 × `hasMany`
-**Baseline:** GORM (1.57 s)
-
-| ORM        | Time       | Speedup          | Notes                        |
-| ---------- | ---------- | ---------------- | ---------------------------- |
-| **GORM**   | 1.57 s     | 1.0×             | `SLOW SQL >= 200ms`          |
-| **Vulcan** | **843 ms** | **1.86× faster** | Concurrent relations loading |
-
----
-
-### So…
-
-* Vulcan outperforms GORM in **both flat and relational workloads**
-* GORM hits **PostgreSQL extended protocol limits (65k params)**
-* Vulcan avoids parameter explosion and scales linearly
-* Best result: **~2× faster** on heavy relations, **~2.5× faster** on full table scans
-
----
-
-## Endurance Test (500 Iterations)
-
-**Test:** 23,000 records with 8 relations (7 × `belongsTo`, 1 × `hasMany`)  
-**Source:** [github.com/knyazev-ro/vulcan/tests](https://github.com/knyazev-ro/vulcan/tree/main/tests)  
-**Configuration:** Semaphore 100, PostgreSQL connections 100  
-
-| Iterations | Records per Iteration | Relations | Total Records Processed | Total Time | Concurrency | Notes |
-|------------|---------------------|-----------|------------------------|------------|-------------|-------|
-| 500        | 23,000              | 8 (7 `belongsTo`, 1 `hasMany`) | 138,000,000 (main rows + belongs tables + avg 4 has many per main row) | 221.532 s | 100 goroutines | Endurance test passed without errors |
-
 
 ## Project Status
 
-| Component                                 | Status        | Notes |
-|-------------------------------------------|---------------|-------|
-| Query Builder All Base Features For DB    | Implemented   | Stable |
-| ORM Layer                                 | Implemented   | Core functionality complete |
-| Relations                                 | Implemented   | Fully supported |
-| NULL Support                              | Implemented   | Ptr Go idiomatic |
-| `GROUP BY`                                | implemented   | more tests! |
-| Semaphore                                 | implemented   | more tests! |
-| Context Support                           | implemented   | more tests! |
+| Component | Status |
+| --- | --- |
+| **Query Builder Core** | ✅ Stable |
+| **ORM / Relations** | ✅ Implemented |
+| **Concurrent Hydration** | ✅ Implemented |
+| **Composite PK** | ✅ Implemented |
+| **Context & Semaphores** | ✅ Implemented |
+
+---
+
+## License
+
+Vulcan ORM is open-sourced software licensed under the MIT license.
+
+---
+
+*Developed by @knyazev-ro as part of the Gerard ecosystem.*
