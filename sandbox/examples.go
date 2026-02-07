@@ -162,6 +162,58 @@ func ExamplesORM() {
 	}
 }
 
+func Aggregations() {
+	db.Init()
+
+	type PostStats struct {
+		_         string  `type:"metadata" table:"posts"`
+		Total     int64   `type:"column" col:"id" agg:"count"`
+		MaxId     int64   `type:"column" col:"id" agg:"max"`
+		MinId     int64   `type:"column" col:"id" agg:"min"`
+		AvgUserId float64 `type:"column" col:"user_id" agg:"avg"`
+		SumIds    int64   `type:"column" col:"id" agg:"sum"`
+	}
+
+	type PostCount struct {
+		_      string `type:"metadata" table:"posts"`
+		UserId int64  `type:"column" col:"user_id"`
+		Value  int64  `type:"column" col:"*" agg:"count"`
+	}
+
+	// Расширим UserTest, чтобы проверить агрегацию как отношение
+	type UserWithStats struct {
+		_    string `type:"metadata" table:"users" pk:"id"`
+		Id   int64  `type:"column" col:"id"`
+		Name string `type:"column" col:"name"`
+		// Агрегация через отношение: количество постов пользователя
+		PostsCount PostCount `type:"relation" table:"posts" reltype:"has-one" fk:"user_id" originalkey:"id"`
+	}
+
+	ctx := context.Background()
+	// 1. Общая агрегация по всей таблице
+	stats, err := vulcan.NewQuery[PostStats]().Load(ctx)
+	if err != nil {
+		fmt.Println("Agg error:", err)
+	}
+	// Ожидаемый SQL: SELECT COUNT("id"), MAX("id"), AVG("user_id"), SUM("id") FROM posts;
+	if len(stats) > 0 {
+		fmt.Printf("Stats: %+v\n", stats[0])
+	}
+
+	// 2. Агрегация с фильтрацией (Where)
+	activeStats, _ := vulcan.NewQuery[PostStats]().
+		Where("user_id", "=", 1).
+		Load(ctx)
+	fmt.Println(activeStats)
+	// Ожидаемый SQL: SELECT ... FROM posts WHERE "user_id" = $1;
+
+	// 3. Агрегация как часть графа отношений (Самый сложный кейс)
+	users, _ := vulcan.NewQuery[UserWithStats]().CLoad(ctx)
+	for _, u := range users {
+		fmt.Printf("User: %s, Posts: %d\n", u.Name, u.PostsCount.Value)
+	}
+}
+
 func RealExampleORM() {
 	db.Init()
 	type ReportWithAggCount struct {

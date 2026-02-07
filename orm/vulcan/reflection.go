@@ -37,6 +37,8 @@ func (q *Query[T]) generateColString(data *GenerateColStringStruct) (string, str
 		alias = fmt.Sprintf(`AVG(%s) AS %s_avg`, original, as)
 	case "max":
 		alias = fmt.Sprintf(`MAX(%s) AS %s_max`, original, as)
+	case "min":
+		alias = fmt.Sprintf(`MIN(%s) AS %s_min`, original, as)
 	case "count":
 		alias = fmt.Sprintf(`COUNT(%s) AS %s_count`, original, as)
 	default:
@@ -95,7 +97,7 @@ func (q *Query[T]) generateCols(i interface{}, options *GenerateColsOptions) []s
 		}
 	}
 
-	if shouldGroup {
+	if shouldGroup && len(originalColsForAgg) > 0 {
 		q.GroupBy(originalColsForAgg)
 	}
 
