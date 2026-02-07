@@ -52,18 +52,22 @@ func ExamplesORM() {
 	ctx := context.Background()
 
 	err := vulcan.NewQuery[UserTest]().
-		From("posts").
+		From("posts", "tags").
 		On("posts.user_id", "=", "users.id"). // Связь User -> Posts
 		Where("users.id", "=", 3).
 		Where("posts.name", "=", "Zachary Terminals: Budget Edition").
 		LeftJoin("tags", func(jc *vulcan.Join) {
 			jc.On("tags.id", "=", "posts.id") // Пример джоина для фильтрации
 		}).
-		Where("tags.name", "like", "%Hardware%").
+		Where("tags.name", "like", "Hardware").
 		Update(ctx, map[string]any{
-			"users.name":      "Deadman",
-			"users.last_name": "Surree",
+			"name":      "Deadman",
+			"last_name": "Surree",
 		})
+	if err != nil {
+		fmt.Println("Difficult update error: ", err.Error())
+	}
+
 	zack, ok, err := vulcan.NewQuery[UserTest]().FindById(ctx, 3)
 	if err != nil {
 		fmt.Println("Error during find: ", err.Error())

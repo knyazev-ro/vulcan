@@ -22,8 +22,9 @@ func (q *Query[T]) selectRaw(cols []string) *Query[T] {
 	return q
 }
 
-func (q *Query[T]) From(table string) *Query[T] {
-	q.fromExp = fmt.Sprintf(`FROM "%s"`, table)
+func (q *Query[T]) From(tables ...string) *Query[T] {
+	str := strings.Join(tables, ", ")
+	q.fromExp = fmt.Sprintf(`FROM %s`, str)
 	return q
 }
 

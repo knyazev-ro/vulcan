@@ -69,18 +69,18 @@ func ExampleQuery_Update() {
 	// Демонстрация сложного Update с Join и подгрузкой из другой таблицы (posts)
 	// db.Init()
 	sql := vulcan.NewQuery[UserTest]().
-		From("posts").
+		From("posts", "tags").
 		On("posts.user_id", "=", "users.id"). // Связь User -> Posts
 		Where("users.id", "=", 3).
 		Where("posts.name", "=", "Zachary Terminals: Budget Edition").
 		LeftJoin("tags", func(jc *vulcan.Join) {
 			jc.On("tags.id", "=", "posts.id") // Пример джоина для фильтрации
 		}).
-		Where("tags.name", "like", "%Hardware%")
-		// Update(ctx, map[string]any{
-		// 	"users.name":      "Deadman",
-		// 	"users.last_name": "Surree",
-		// })
+		Where("tags.name", "like", "Hardware")
+	// Update(ctx, map[string]any{
+	// 	"name":      "Deadman",
+	// 	"last_name": "Surree",
+	// })
 
 	fmt.Println(sql)
 }
