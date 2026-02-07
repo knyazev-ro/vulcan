@@ -132,33 +132,34 @@ func ExamplesORM() {
 	}
 
 	// Delete по условию
-	// _, err = vulcan.NewQuery[UserTest]().
-	// 	Where("name", "like", "%Garry%").
-	// 	Delete(ctx)
-	// if err != nil {
-	// 	fmt.Println("Delete error:", err)
-	// } else {
-	// 	fmt.Println("Deleted users with name like Garry")
-	// }
+	_, err = vulcan.NewQuery[UserTest]().
+		Where("name", "like", "%Garry%").
+		Delete(ctx)
+	if err != nil {
+		fmt.Println("Delete error:", err)
+	} else {
+		fmt.Println("Deleted users with name like Garry")
+	}
 
-	// // DeleteById
-	// _, err = vulcan.NewQuery[UserTest]().DeleteById(ctx, 1)
-	// if err != nil {
-	// 	fmt.Println("DeleteById error:", err)
-	// } else {
-	// 	fmt.Println("Deleted user with ID 1")
-	// }
+	// DeleteById
+	_, err = vulcan.NewQuery[UserTest]().DeleteById(ctx, 10)
+	if err != nil {
+		fmt.Println("DeleteById error:", err)
+	} else {
+		fmt.Println("Deleted user with ID 1")
+	}
 
 	// Delete с Using (пример для множественных таблиц)
-	// _, err = vulcan.NewQuery[UserTest]().
-	// 	Using("posts p", "profiles pr").
-	// 	Where("p.name", "like", "%A%").
-	// 	Delete(ctx)
-	// if err != nil {
-	// 	fmt.Println("Delete with Using error:", err)
-	// } else {
-	// 	fmt.Println("Deleted users with posts.name like %A%")
-	// }
+	_, err = vulcan.NewQuery[UserTest]().
+		Using("posts p", "profiles pr").
+		Where("p.name", "like", "%A%").
+		Delete(ctx)
+	if err != nil {
+		// constraint violation with table profiles!
+		fmt.Println("Delete with Using error:", err)
+	} else {
+		fmt.Println("Deleted users with posts.name like %A%")
+	}
 }
 
 func RealExampleORM() {
