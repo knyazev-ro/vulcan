@@ -185,6 +185,15 @@ func ExamplesORM() {
 	if err != nil {
 		fmt.Println("Erro when deleting Duran: ", err.Error())
 	}
+
+	// передаем 2 id, потому что составной ключ!
+	postTag, ok, err := vulcan.NewQuery[PostTag]().FindById(ctx, 1, 1)
+	if err != nil {
+		fmt.Println("Error during fetch postTag: ", err.Error())
+	}
+	if ok {
+		fmt.Println("GET PostTag by Ids: ", postTag)
+	}
 }
 
 func Aggregations() {

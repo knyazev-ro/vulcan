@@ -87,14 +87,18 @@ func (q *Query[T]) WhereAny(col string, values []any) *Query[T] {
 // return Model and bool - true - exists, false - not
 func (q *Query[T]) FindById(ctx context.Context, ids ...int64) (T, bool, error) {
 	pks := q.Model.Pks
+	var empty T
+
+	if len(pks) != len(ids) {
+		return empty, false, &FindByIdError{message: "len of ids arguments and len of pk mismatch. len of pks should be == to len of ids arguments!"}
+	}
 
 	for idx, pk := range pks {
 		Id := fmt.Sprintf("%s.%s", q.Model.TableName, pk)
 		q.Where(Id, "=", ids[idx])
 	}
 
-	Ts, err := q.CLoad(ctx)
-	var empty T
+	Ts, err := q.Load(ctx)
 	if err != nil {
 		return empty, false, err
 	}

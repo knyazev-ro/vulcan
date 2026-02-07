@@ -7,3 +7,11 @@ type InvalidStructError struct {
 func (e *InvalidStructError) Error() string {
 	return e.message
 }
+
+type FindByIdError struct {
+	message string
+}
+
+func (e *FindByIdError) Error() string {
+	return e.message
+}
