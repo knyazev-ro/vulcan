@@ -25,7 +25,7 @@ type PostTest struct {
 	Name     string        `type:"column" col:"name"`
 	UserId   int64         `type:"column" col:"user_id"`
 	Category CategoryTest  `type:"relation" table:"categories" reltype:"belongs-to" fk:"category_id" originalkey:"id"`
-	Comments []CommentTest `type:"relation" table:"comments" reltype:"has-many" fk:"post_id"`
+	Comments []CommentTest `type:"relation" table:"comments" reltype:"has-many" fk:"post_id" originalkey:"id"`
 }
 
 type UserTest struct {
@@ -33,7 +33,7 @@ type UserTest struct {
 	Id       int64      `type:"column" col:"id"`
 	Name     string     `type:"column" col:"name"`
 	LastName string     `type:"column" col:"last_name"`
-	Posts    []PostTest `type:"relation" table:"posts" reltype:"has-many" fk:"user_id"`
+	Posts    []PostTest `type:"relation" table:"posts" reltype:"has-many" fk:"user_id" originalkey:"id"`
 }
 
 func ExampleQuery_OrderBy() {
