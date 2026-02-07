@@ -1,7 +1,7 @@
 package main
 
 func main() {
-	// ExamplesORM()
-	Aggregations()
+	ExamplesORM()
+	// Aggregations()
 	// RealExampleORM()
 }

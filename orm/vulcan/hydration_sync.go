@@ -134,7 +134,12 @@ func (q *Query[T]) smartHydrationSync(ctx context.Context, model interface{}, pa
 				// Выполняем запрос в БД по получению полей.
 
 				whereHasClosure, ok := q.whereHasMap[relFieldType.Name]
-				query := NewQuery[T]().SelectFromStruct(relStruct)
+				query, err := NewQuery[T]().SelectFromStruct(relStruct).UseConn(q.db)
+
+				if err != nil {
+					return nil, err
+				}
+
 				if ok {
 					whereHasClosure(query)
 				}
@@ -169,7 +174,12 @@ func (q *Query[T]) smartHydrationSync(ctx context.Context, model interface{}, pa
 				relStruct := reflect.New(relFieldValue.Type()).Interface()
 
 				whereHasClosure, ok := q.whereHasMap[relFieldType.Name]
-				query := NewQuery[T]().SelectFromStruct(relStruct)
+				query, err := NewQuery[T]().SelectFromStruct(relStruct).UseConn(q.db)
+
+				if err != nil {
+					return nil, err
+				}
+
 				if ok {
 					whereHasClosure(query)
 				}
@@ -200,7 +210,12 @@ func (q *Query[T]) smartHydrationSync(ctx context.Context, model interface{}, pa
 				relStruct := reflect.New(relFieldValue.Type()).Interface()
 
 				whereHasClosure, ok := q.whereHasMap[relFieldType.Name]
-				query := NewQuery[T]().SelectFromStruct(relStruct)
+				query, err := NewQuery[T]().SelectFromStruct(relStruct).UseConn(q.db)
+
+				if err != nil {
+					return nil, err
+				}
+
 				if ok {
 					whereHasClosure(query)
 				}

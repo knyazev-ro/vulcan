@@ -121,6 +121,26 @@ func ExamplesORM() {
 		fmt.Println("Loaded users:", len(users))
 	}
 
+	fmt.Println("Start of Transaction")
+	err = vulcan.Transaction(ctx, func(tx *sql.Tx) error {
+		start := time.Now()
+		query, err := vulcan.NewQuery[UserTest]().UseConn(tx)
+		users, err := query.Load(ctx)
+		end := time.Now()
+		if err != nil {
+			fmt.Println("Load error:", err)
+		} else {
+			fmt.Println("Duration:", end.Sub(start))
+			fmt.Println("Loaded users:", len(users))
+		}
+		return nil
+	})
+	fmt.Println("End of Transaction")
+
+	if err != nil {
+		fmt.Println("Error during transaction: ", err.Error())
+	}
+
 	// FindById
 	user, ok, err := vulcan.NewQuery[UserTest]().FindById(ctx, 3)
 	if err != nil {
