@@ -10,9 +10,155 @@ import (
 	"github.com/knyazev-ro/vulcan/orm/vulcan"
 )
 
+func ExamplesORM() {
+	db.Init()
+	type TagTest struct {
+		_    string `type:"metadata" table:"tags" pk:"id"`
+		Id   int64  `type:"column" col:"id"`
+		Name string `type:"column" col:"name"`
+	}
+
+	type PostTag struct {
+		_      string  `type:"metadata" table:"post_tags" pk:"post_id,tag_id" tabletype:"pivot"`
+		PostId int64   `type:"column" col:"post_id"`
+		TagId  int64   `type:"column" col:"tag_id"`
+		Tag    TagTest `type:"relation" table:"tags" reltype:"belongs-to" fk:"tag_id" originalkey:"id"`
+	}
+
+	type PostTest struct {
+		_        string    `type:"metadata" table:"posts" pk:"id"`
+		Id       int64     `type:"column" col:"id"`
+		Name     string    `type:"column" col:"name"`
+		UserId   int64     `type:"column" col:"user_id"`
+		PostTags []PostTag `type:"relation" table:"post_tags" reltype:"has-many" fk:"post_id" originalkey:"id"`
+	}
+
+	type ProfileTest struct {
+		_      string `type:"metadata" table:"profiles" pk:"id"`
+		Id     int64  `type:"column" col:"id"`
+		UserId int64  `type:"column" col:"user_id"`
+		Bio    string `type:"column" col:"bio"`
+		Avatar string `type:"column" col:"avatar"`
+	}
+
+	type UserTest struct {
+		_        string      `type:"metadata" table:"users" pk:"id"`
+		Id       int64       `type:"column" col:"id"`
+		Name     string      `type:"column" col:"name"`
+		LastName string      `type:"column" col:"last_name"`
+		Posts    []PostTest  `type:"relation" table:"posts" reltype:"has-many" fk:"user_id" originalkey:"id"`
+		Profile  ProfileTest `type:"relation" table:"profiles" reltype:"has-one" fk:"user_id" originalkey:"id"`
+	}
+	ctx := context.Background()
+
+	err := vulcan.NewQuery[UserTest]().
+		From("posts").
+		On("posts.user_id", "=", "users.id"). // Связь User -> Posts
+		Where("users.id", "=", 3).
+		Where("posts.name", "=", "Zachary Terminals: Budget Edition").
+		LeftJoin("tags", func(jc *vulcan.Join) {
+			jc.On("tags.id", "=", "posts.id") // Пример джоина для фильтрации
+		}).
+		Where("tags.name", "like", "%Hardware%").
+		Update(ctx, map[string]any{
+			"users.name":      "Deadman",
+			"users.last_name": "Surree",
+		})
+	zack, ok, err := vulcan.NewQuery[UserTest]().FindById(ctx, 3)
+	if err != nil {
+		fmt.Println("Error during find: ", err.Error())
+	}
+	if ok {
+		fmt.Println(zack.Name, zack.LastName)
+	}
+
+	// Update
+	err = vulcan.NewQuery[UserTest]().
+		Where("name", "like", "Bobby").
+		Update(ctx, map[string]any{
+			"name":      "Duran",
+			"last_name": "Duran",
+		})
+	if err != nil {
+		fmt.Println("Update error:", err)
+	} else {
+		fmt.Println("Update succeeded")
+	}
+
+	// Create новые записи
+	err = vulcan.NewQuery[UserTest]().Create(ctx, map[string]any{
+		"name":      "Garry",
+		"last_name": "Debrua",
+	})
+	if err != nil {
+		fmt.Println("Create error:", err)
+	} else {
+		fmt.Println("Created user Garry")
+	}
+
+	err = vulcan.NewQuery[UserTest]().Create(ctx, map[string]any{
+		"name":      "Bobby",
+		"last_name": "Fisher",
+	})
+	if err != nil {
+		fmt.Println("Create error:", err)
+	} else {
+		fmt.Println("Created user Bobby")
+	}
+
+	// Load всех пользователей
+	start := time.Now()
+	users, err := vulcan.NewQuery[UserTest]().CLoad(ctx)
+	end := time.Now()
+	if err != nil {
+		fmt.Println("Load error:", err)
+	} else {
+		fmt.Println("Duration:", end.Sub(start))
+		fmt.Println("Loaded users:", len(users))
+	}
+
+	// FindById
+	user, ok, err := vulcan.NewQuery[UserTest]().FindById(ctx, 3)
+	if err != nil {
+		fmt.Println("FindById error:", err)
+	} else if ok {
+		fmt.Println("User found:", user)
+	} else {
+		fmt.Println("User not found")
+	}
+
+	// Delete по условию
+	// _, err = vulcan.NewQuery[UserTest]().
+	// 	Where("name", "like", "%Garry%").
+	// 	Delete(ctx)
+	// if err != nil {
+	// 	fmt.Println("Delete error:", err)
+	// } else {
+	// 	fmt.Println("Deleted users with name like Garry")
+	// }
+
+	// // DeleteById
+	// _, err = vulcan.NewQuery[UserTest]().DeleteById(ctx, 1)
+	// if err != nil {
+	// 	fmt.Println("DeleteById error:", err)
+	// } else {
+	// 	fmt.Println("Deleted user with ID 1")
+	// }
+
+	// Delete с Using (пример для множественных таблиц)
+	// _, err = vulcan.NewQuery[UserTest]().
+	// 	Using("posts p", "profiles pr").
+	// 	Where("p.name", "like", "%A%").
+	// 	Delete(ctx)
+	// if err != nil {
+	// 	fmt.Println("Delete with Using error:", err)
+	// } else {
+	// 	fmt.Println("Deleted users with posts.name like %A%")
+	// }
+}
+
 func RealExampleORM() {
 	db.Init()
-
 	type ReportWithAggCount struct {
 		_      string `type:"metadata" table:"reports" pk:"id"`
 		Status string `type:"column" col:"status"`
@@ -20,8 +166,9 @@ func RealExampleORM() {
 	}
 
 	type Report struct {
-		_                    string  `type:"metadata" table:"reports" pk:"id"`
-		Id                   int64   `type:"column" col:"id"`
+		_  string `type:"metadata" table:"reports" pk:"id"`
+		Id int64  `type:"column" col:"id"`
+		// Дополнительные поля из fillable
 		SystemFileId         int64   `type:"column" col:"system_file_id"`
 		DataFilePath         string  `type:"column" col:"data_file_path"`
 		Filters              string  `type:"column" col:"filters"`
