@@ -40,94 +40,94 @@ func ExamplesQuery() {
 		Posts    []PostTest `type:"relation" table:"posts" reltype:"has-many" fk:"user_id"`
 	}
 
-	// ctx := context.Background()
+	ctx := context.Background()
 
-	// // Примеры Load
-	// users, err := vulcan.NewQuery[UserTest]().
-	// 	OrderBy("desc", "id")
-	// 	CLoad(ctx)
-	// if err != nil {
-	// 	fmt.Println("Load error:", err)
-	// } else {
-	// 	fmt.Println("Users loaded:", len(users))
-	// }
+	// Примеры Load
+	users, err := vulcan.NewQuery[UserTest]().
+		OrderBy("desc", "id").
+		CLoad(ctx)
+	if err != nil {
+		fmt.Println("Load error:", err)
+	} else {
+		fmt.Println("Users loaded:", len(users))
+	}
 
-	// users, err = vulcan.NewQuery[UserTest]().
-	// 	Where("id", ">", 1).
-	// 	Where("id", "!=", 3).
-	// 	CLoad(ctx)
-	// if err != nil {
-	// 	fmt.Println("Load error:", err)
-	// } else {
-	// 	fmt.Println("Filtered users loaded:", len(users))
-	// }
+	users, err = vulcan.NewQuery[UserTest]().
+		Where("id", ">", 1).
+		Where("id", "!=", 3).
+		CLoad(ctx)
+	if err != nil {
+		fmt.Println("Load error:", err)
+	} else {
+		fmt.Println("Filtered users loaded:", len(users))
+	}
 
-	// // Пример Update
-	// vulcan.NewQuery[UserTest]().
-	// 	From("posts").
-	// 	On("posts.id", "=", "users.post_id").
-	// 	Where("users.id", "=", 10).
-	// 	Where("users.active", "=", 1).
-	// 	Where("posts.name", "=", "agartha").
-	// 	LeftJoin("categories", func(jc *vulcan.Join) {
-	// 		jc.On("categories.id", "=", "posts.category_id")
-	// 	}).
-	// 	Where("categories.name", "like", "%A%").
-	// 	Update(ctx, map[string]any{
-	// 		"users.role_id":  1,
-	// 		"users.owner_id": 2,
-	// 	})
+	// Пример Update
+	vulcan.NewQuery[UserTest]().
+		From("posts").
+		On("posts.id", "=", "users.post_id").
+		Where("users.id", "=", 10).
+		Where("users.active", "=", 1).
+		Where("posts.name", "=", "agartha").
+		LeftJoin("categories", func(jc *vulcan.Join) {
+			jc.On("categories.id", "=", "posts.category_id")
+		}).
+		Where("categories.name", "like", "%A%").
+		Update(ctx, map[string]any{
+			"users.role_id":  1,
+			"users.owner_id": 2,
+		})
 
-	// // Примеры сложных Where / OrWhere / WhereClause
-	// sql := vulcan.NewQuery[UserTest]().
-	// 	Where("role", "=", "admin").
-	// 	OrWhere("role", "=", "moderator").
-	// 	Build().
-	// 	SQL()
-	// fmt.Println("SQL Example:", sql)
+	// Примеры сложных Where / OrWhere / WhereClause
+	sql := vulcan.NewQuery[UserTest]().
+		Where("role", "=", "admin").
+		OrWhere("role", "=", "moderator").
+		Build().
+		SQL()
+	fmt.Println("SQL Example:", sql)
 
-	// // FindById пример
-	// user, ok, err := vulcan.NewQuery[UserTest]().FindById(ctx, 3)
-	// if err != nil {
-	// 	fmt.Println("FindById error:", err)
-	// } else if ok {
-	// 	fmt.Println("User found:", user)
-	// } else {
-	// 	fmt.Println("User not found")
-	// }
+	// FindById пример
+	user, ok, err := vulcan.NewQuery[UserTest]().FindById(ctx, 3)
+	if err != nil {
+		fmt.Println("FindById error:", err)
+	} else if ok {
+		fmt.Println("User found:", user)
+	} else {
+		fmt.Println("User not found")
+	}
 
-	// // Пример с Join и сложными WhereClause
-	// q := vulcan.NewQuery[UserTest]().
-	// 	InnerJoin("posts", func(jc *vulcan.Join) { jc.On("posts.user_id", "=", "users.id") }).
-	// 	LeftJoin("categories", func(jc *vulcan.Join) { jc.On("categories.id", "=", "posts.category_id") }).
-	// 	LeftJoin("comments", func(jc *vulcan.Join) { jc.On("comments.post_id", "=", "posts.id") }).
-	// 	Where("users.active", "=", 1).
-	// 	WhereClause(func(q *vulcan.Query[UserTest]) {
-	// 		q.Where("users.status", "=", "premium").
-	// 			OrWhereClause(func(q *vulcan.Query[UserTest]) {
-	// 				q.Where("users.role", "=", "admin").
-	// 					WhereClause(func(q *vulcan.Query[UserTest]) {
-	// 						q.Where("users.age", ">", 30).
-	// 							OrWhere("users.signup_date", ">", "2025-01-01")
-	// 					})
-	// 			})
-	// 	}).
-	// 	Where("posts.published", "=", 1).
-	// 	WhereClause(func(q *vulcan.Query[UserTest]) {
-	// 		q.Where("categories.name", "like", "%Tech%").
-	// 			OrWhere("categories.name", "like", "%Science%")
-	// 	}).
-	// 	WhereClause(func(q *vulcan.Query[UserTest]) {
-	// 		q.Where("comments.approved", "=", 1).
-	// 			OrWhere("comments.content", "like", "%important%")
-	// 	}).
-	// 	Where("posts.views", ">", 1000).
-	// 	OrderBy("desc", "users.id", "posts.id").
-	// 	Limit(50).
-	// 	Offset(10)
+	// Пример с Join и сложными WhereClause
+	q := vulcan.NewQuery[UserTest]().
+		InnerJoin("posts", func(jc *vulcan.Join) { jc.On("posts.user_id", "=", "users.id") }).
+		LeftJoin("categories", func(jc *vulcan.Join) { jc.On("categories.id", "=", "posts.category_id") }).
+		LeftJoin("comments", func(jc *vulcan.Join) { jc.On("comments.post_id", "=", "posts.id") }).
+		Where("users.active", "=", 1).
+		WhereClause(func(q *vulcan.Query[UserTest]) {
+			q.Where("users.status", "=", "premium").
+				OrWhereClause(func(q *vulcan.Query[UserTest]) {
+					q.Where("users.role", "=", "admin").
+						WhereClause(func(q *vulcan.Query[UserTest]) {
+							q.Where("users.age", ">", 30).
+								OrWhere("users.signup_date", ">", "2025-01-01")
+						})
+				})
+		}).
+		Where("posts.published", "=", 1).
+		WhereClause(func(q *vulcan.Query[UserTest]) {
+			q.Where("categories.name", "like", "%Tech%").
+				OrWhere("categories.name", "like", "%Science%")
+		}).
+		WhereClause(func(q *vulcan.Query[UserTest]) {
+			q.Where("comments.approved", "=", 1).
+				OrWhere("comments.content", "like", "%important%")
+		}).
+		Where("posts.views", ">", 1000).
+		OrderBy("desc", "users.id", "posts.id").
+		Limit(50).
+		Offset(10)
 
-	// fmt.Println("Complex SQL:", q.Build().SQL())
-	// fmt.Println("Bindings:", q.Bindings)
+	fmt.Println("Complex SQL:", q.Build().SQL())
+	fmt.Println("Bindings:", q.Bindings)
 }
 
 func ExamplesORM() {

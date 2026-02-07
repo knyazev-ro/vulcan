@@ -33,22 +33,12 @@ func (q *Query[T]) Using(tables ...string) *Query[T] {
 }
 
 func (q *Query[T]) OnStatment(left string, expr string, right string, clay bool) *Query[T] {
-	whereStr := ""
-	if q.whereExp == "" {
-		whereStr = "WHERE "
-	}
-
-	if len(q.whereExp) == 1 && q.whereExp == "(" {
-		q.whereExp = "WHERE ("
-	}
-
-	statement := fmt.Sprintf(`%s %s %s %s`, whereStr, utils.SeparateParts(left), expr, utils.SeparateParts(right))
-
+	statement := fmt.Sprintf(`%s %s %s`, utils.SeparateParts(left), expr, utils.SeparateParts(right))
 	boolVal := "AND"
 	if clay {
 		boolVal = "OR"
 	}
-	if q.whereExp != "WHERE (" && q.whereExp != "" && q.whereExp[len(q.whereExp)-1] != '(' {
+	if q.whereExp != "" && q.whereExp[len(q.whereExp)-1] != '(' {
 		statement = fmt.Sprintf(" %s %s", boolVal, statement)
 	}
 
