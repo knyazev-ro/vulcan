@@ -49,7 +49,7 @@ func ExampleQuery_Where() {
 		Where("id", "!=", 3).
 		Build().
 		SQL()
-	// Load(ctx) or CLoad(ctx)
+	// after Where Load(ctx) or CLoad(ctx)
 	fmt.Println(sql)
 	// Output: SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users WHERE "id" > $1 AND "id" != $2;
 }
@@ -65,7 +65,7 @@ func ExampleQuery_Update() {
 			jc.On("categories.id", "=", "posts.category_id")
 		}).
 		Where("categories.name", "like", "%A%").Build().SQL()
-	// 	Update(ctx, map[string]any{
+	// 	after Where Update(ctx, map[string]any{
 	// 		"users.role_id":  1,
 	// 		"users.owner_id": 2,
 	// 	})
@@ -79,7 +79,7 @@ func ExampleQuery_OrWhere() {
 		OrWhere("role", "=", "moderator").
 		Build().
 		SQL()
-	// Load(ctx) or CLoad(ctx)
+	// after OrWhere Load(ctx) or CLoad(ctx)
 	fmt.Println(sql)
 	// Output: SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users WHERE "role" = $1 OR "role" = $2;
 }
@@ -115,7 +115,7 @@ func ExampleQuery_WhereClause() {
 		Offset(10).
 		Build().
 		SQL()
-	// Load(ctx) or CLoad(ctx)
+	// after Offset Load(ctx) or CLoad(ctx)
 	fmt.Println(sql)
 	// Output: SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users JOIN "posts" ON "posts"."user_id" = "users"."id" LEFT JOIN "categories" ON "categories"."id" = "posts"."category_id" LEFT JOIN "comments" ON "comments"."post_id" = "posts"."id" WHERE "users"."active" = $1 AND ("users"."status" = $2 OR ("users"."role" = $3 AND ("users"."age" > $4 OR "users"."signup_date" > $5))) AND "posts"."published" = $6 AND ("categories"."name" like $7 OR "categories"."name" like $8) AND ("comments"."approved" = $9 OR "comments"."content" like $10) AND "posts"."views" > $11 ORDER BY "users"."id", "posts"."id" DESC LIMIT 50 OFFSET 10;
 }
