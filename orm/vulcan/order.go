@@ -7,10 +7,10 @@ import (
 	"github.com/knyazev-ro/vulcan/utils"
 )
 
-func (q *Query[T]) OrderBy(cols []string, direction string) *Query[T] {
+func (q *Query[T]) OrderBy(direction string, cols ...string) *Query[T] {
 	colsSafe := utils.ColsSafe(cols)
 	orderCols := strings.Join(colsSafe, ", ")
-	statement := fmt.Sprintf("ORDER BY %s %s", orderCols, strings.ToUpper(direction))
-	q.orderExp = statement
+	statement := fmt.Sprintf("%s %s", orderCols, strings.ToUpper(direction))
+	q.orderExp = append(q.orderExp, statement)
 	return q
 }

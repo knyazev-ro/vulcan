@@ -18,7 +18,7 @@ type Query[T any] struct {
 	whereExp      string
 	joinExp       string
 	createExp     string
-	orderExp      string
+	orderExp      []string
 	fromExp       string
 	usingExp      string
 	limitExp      string
@@ -60,7 +60,7 @@ func (q *Query[T]) Build() *Query[T] {
 		return q
 	}
 
-	selectStr := fmt.Sprintf("SELECT *")
+	selectStr := "SELECT *"
 
 	if q.selectExp != "" {
 		selectStr = q.selectExp
@@ -105,8 +105,8 @@ func (q *Query[T]) appendExpressions() {
 		q.fullStatement = strings.Trim(q.fullStatement, " ")
 	}
 
-	if q.orderExp != "" {
-		q.fullStatement += " " + strings.Trim(q.orderExp, " ")
+	if len(q.orderExp) > 0 {
+		q.fullStatement += " ORDER BY " + strings.Trim(strings.Join(q.orderExp, ", "), " ")
 		q.fullStatement = strings.Trim(q.fullStatement, " ")
 	}
 
@@ -122,7 +122,6 @@ func (q *Query[T]) appendExpressions() {
 }
 
 func (q *Query[T]) SQL() string {
-	// println("SQL: ", q.fullStatement)
 	return q.fullStatement
 }
 

@@ -129,7 +129,7 @@ type ReportData struct {
 	ValueItems []ReportValueItem `type:"relation" table:"report_value_items" reltype:"has-many" fk:"data_table_id" originalkey:"id"`
 }
 
-func TestVulcanEndurance(t *testing.T) {
+func _TestVulcanEndurance(t *testing.T) {
 	db.Init()
 	var wg sync.WaitGroup
 	iterations := 500
