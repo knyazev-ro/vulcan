@@ -68,6 +68,20 @@ func ExamplesORM() {
 		fmt.Println("Difficult update error: ", err.Error())
 	}
 
+	type UserTestJoinBio struct {
+		_    string  `type:"metadata" table:"users" pk:"id"`
+		Id   int64   `type:"column" col:"id"`
+		Name string  `type:"column" col:"name"`
+		Bio  *string `type:"column" col:"bio" table:"profiles"`
+	}
+
+	userJoinBio, err := vulcan.NewQuery[UserTestJoinBio]().LeftJoin("profiles", func(jc *vulcan.Join) { jc.On("profiles.user_id", "=", "users.id") }).Load(ctx)
+	if err != nil {
+		fmt.Println("Error during profiles join")
+	} else {
+		fmt.Println("Get User with Only Bio as result of join with profiles", userJoinBio)
+	}
+
 	zack, ok, err := vulcan.NewQuery[UserTest]().FindById(ctx, 3)
 	if err != nil {
 		fmt.Println("Error during find: ", err.Error())
