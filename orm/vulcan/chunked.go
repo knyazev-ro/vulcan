@@ -2,9 +2,13 @@ package vulcan
 
 import "context"
 
+// IN WORK!
 func (q *Query[T]) Chunk(ctx context.Context, chunk int, closure func([]T) error) error {
+	var prev any
+	prev = nil
 	for {
-		data, err := q.CursorPaginate("id", nil, chunk).Load(ctx)
+		data, err := q.CursorPaginate("id", prev, chunk).Load(ctx)
+		prev = data[len(data)-1] // TODO: REFLECT GET ID FROM METADATA!
 
 		if err != nil {
 			return err
@@ -37,22 +41,4 @@ func (q *Query[T]) Each(ctx context.Context, closure func(T) error) error {
 		return err
 	}
 	return nil
-}
-
-func (q *Query[T]) Map(ctx context.Context, closure func(T) (T, error)) ([]T, error) {
-	result := []T{}
-	err := q.Chunk(ctx, 1000, func(t []T) error {
-		for _, elem := range t {
-			model, err := closure(elem)
-			if err != nil {
-				return err
-			}
-			result = append(result, model)
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
 }
