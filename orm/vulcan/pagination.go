@@ -1,9 +1,14 @@
 package vulcan
 
-func (q *Query[T]) Paginate(page int, perPage int) *Query[T] {
+func (q *Query[T]) Paginate(col string, page int, perPage int) *Query[T] {
 	// page 1, perPage 10 = offset 0 limit 10
 	// page 2, perPage 10 = offset 10 limit 10
 	// page 3, perPage 10 = offset 20 limit 10
+
+	if len(q.orderExp) <= 0 {
+		q.OrderBy("asc", col)
+	}
+
 	currPerPage := 10
 	if perPage > 0 {
 		currPerPage = perPage

@@ -130,56 +130,64 @@ func ExampleQuery_WhereClause() {
 
 func TestQuery_Pagination(t *testing.T) {
 	t.Run("check sql query for 1 page", func(t *testing.T) {
-		sql := vulcan.NewQuery[UserTest]().Paginate(1, 10).Build().SQL()
+		sql := vulcan.NewQuery[UserTest]().Paginate("id", 1, 10).Build().SQL()
 		fmt.Println(sql)
-		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users LIMIT 10 OFFSET 0;` {
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users ORDER BY "id" ASC LIMIT 10 OFFSET 0;` {
 			t.Errorf("pagination test failed page 1")
 		}
 	})
 
 	t.Run("check sql query for 2 page", func(t *testing.T) {
-		sql := vulcan.NewQuery[UserTest]().Paginate(2, 10).Build().SQL()
+		sql := vulcan.NewQuery[UserTest]().Paginate("id", 2, 10).Build().SQL()
 		fmt.Println(sql)
-		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users LIMIT 10 OFFSET 10;` {
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users ORDER BY "id" ASC LIMIT 10 OFFSET 10;` {
 			t.Errorf("pagination test failed page 2")
 		}
 	})
 
 	t.Run("check sql query for 3 page", func(t *testing.T) {
-		sql := vulcan.NewQuery[UserTest]().Paginate(3, 10).Build().SQL()
+		sql := vulcan.NewQuery[UserTest]().Paginate("id", 3, 10).Build().SQL()
 		fmt.Println(sql)
-		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users LIMIT 10 OFFSET 20;` {
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users ORDER BY "id" ASC LIMIT 10 OFFSET 20;` {
 			t.Errorf("pagination test failed page 3")
 		}
 	})
 
 	t.Run("check sql query for page 1 perpage 5", func(t *testing.T) {
-		sql := vulcan.NewQuery[UserTest]().Paginate(1, 5).Build().SQL()
+		sql := vulcan.NewQuery[UserTest]().Paginate("id", 1, 5).Build().SQL()
 		fmt.Println(sql)
-		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users LIMIT 5 OFFSET 0;` {
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users ORDER BY "id" ASC LIMIT 5 OFFSET 0;` {
 			t.Errorf("pagination test failed page 3 perpage 5")
 		}
 	})
 
 	t.Run("check sql query for page 2 perpage 5", func(t *testing.T) {
-		sql := vulcan.NewQuery[UserTest]().Paginate(2, 5).Build().SQL()
+		sql := vulcan.NewQuery[UserTest]().Paginate("id", 2, 5).Build().SQL()
 		fmt.Println(sql)
-		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users LIMIT 5 OFFSET 5;` {
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users ORDER BY "id" ASC LIMIT 5 OFFSET 5;` {
 			t.Errorf("pagination test failed page 3 perpage 5")
 		}
 	})
 	t.Run("check sql query for page 3 perpage 5", func(t *testing.T) {
-		sql := vulcan.NewQuery[UserTest]().Paginate(3, 5).Build().SQL()
+		sql := vulcan.NewQuery[UserTest]().Paginate("id", 3, 5).Build().SQL()
 		fmt.Println(sql)
-		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users LIMIT 5 OFFSET 10;` {
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users ORDER BY "id" ASC LIMIT 5 OFFSET 10;` {
 			t.Errorf("pagination test failed page 3 perpage 5")
 		}
 	})
 
 	t.Run("check sql query for page 128 perpage 100", func(t *testing.T) {
-		sql := vulcan.NewQuery[UserTest]().Paginate(128, 100).Build().SQL()
+		sql := vulcan.NewQuery[UserTest]().Paginate("id", 128, 100).Build().SQL()
 		fmt.Println(sql)
-		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users LIMIT 100 OFFSET 12700;` {
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users ORDER BY "id" ASC LIMIT 100 OFFSET 12700;` {
+			t.Errorf("pagination test failed page 128 perpage 100")
+		}
+	})
+
+	t.Run("check sql query for page 128 perpage 100 column created_at", func(t *testing.T) {
+		sql := vulcan.NewQuery[UserTest]().Paginate("created_at", 128, 100).Build().SQL()
+		fmt.Println(sql)
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users ORDER BY "created_at" ASC LIMIT 100 OFFSET 12700;` {
 			t.Errorf("pagination test failed page 128 perpage 100")
 		}
 	})
