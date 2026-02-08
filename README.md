@@ -138,6 +138,7 @@ vulcan.NewQuery[User]().
 | **Concurrent Hydration** | ✅ Implemented |
 | **Composite PK** | ✅ Implemented |
 | **Context & Semaphores** | ✅ Implemented |
+| Chunk + Each | *in plan* |
 
 ---
 
