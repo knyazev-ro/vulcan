@@ -1,6 +1,6 @@
 package vulcan
 
-func (q *Query[T]) Paginate(perPage int, page int) *Query[T] {
+func (q *Query[T]) Paginate(page int, perPage int) *Query[T] {
 	// page 1, perPage 10 = offset 0 limit 10
 	// page 2, perPage 10 = offset 10 limit 10
 	// page 3, perPage 10 = offset 20 limit 10
