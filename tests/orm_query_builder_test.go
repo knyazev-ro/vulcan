@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"testing"
 
 	"github.com/knyazev-ro/vulcan/orm/vulcan"
 )
@@ -125,4 +126,96 @@ func ExampleQuery_WhereClause() {
 
 	fmt.Println(sql)
 	// Output: SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users JOIN "posts" ON "posts"."user_id" = "users"."id" LEFT JOIN "profiles" ON "profiles"."user_id" = "users"."id" WHERE "users"."id" > $1 AND ("users"."name" = $2 OR ("users"."last_name" = $3 AND ("profiles"."bio" like $4 OR "profiles"."avatar" = $5))) AND "posts"."name" like $6 ORDER BY "users"."id", "posts"."id" DESC LIMIT 50 OFFSET 10;
+}
+
+func TestQuery_Pagination(t *testing.T) {
+	t.Run("check sql query for 1 page", func(t *testing.T) {
+		sql := vulcan.NewQuery[UserTest]().Paginate(1, 10).Build().SQL()
+		fmt.Println(sql)
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users LIMIT 10 OFFSET 0;` {
+			t.Errorf("pagination test failed page 1")
+		}
+	})
+
+	t.Run("check sql query for 2 page", func(t *testing.T) {
+		sql := vulcan.NewQuery[UserTest]().Paginate(2, 10).Build().SQL()
+		fmt.Println(sql)
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users LIMIT 10 OFFSET 10;` {
+			t.Errorf("pagination test failed page 2")
+		}
+	})
+
+	t.Run("check sql query for 3 page", func(t *testing.T) {
+		sql := vulcan.NewQuery[UserTest]().Paginate(3, 10).Build().SQL()
+		fmt.Println(sql)
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users LIMIT 10 OFFSET 20;` {
+			t.Errorf("pagination test failed page 3")
+		}
+	})
+
+	t.Run("check sql query for page 1 perpage 5", func(t *testing.T) {
+		sql := vulcan.NewQuery[UserTest]().Paginate(1, 5).Build().SQL()
+		fmt.Println(sql)
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users LIMIT 5 OFFSET 0;` {
+			t.Errorf("pagination test failed page 3 perpage 5")
+		}
+	})
+
+	t.Run("check sql query for page 2 perpage 5", func(t *testing.T) {
+		sql := vulcan.NewQuery[UserTest]().Paginate(2, 5).Build().SQL()
+		fmt.Println(sql)
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users LIMIT 5 OFFSET 5;` {
+			t.Errorf("pagination test failed page 3 perpage 5")
+		}
+	})
+	t.Run("check sql query for page 3 perpage 5", func(t *testing.T) {
+		sql := vulcan.NewQuery[UserTest]().Paginate(3, 5).Build().SQL()
+		fmt.Println(sql)
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users LIMIT 5 OFFSET 10;` {
+			t.Errorf("pagination test failed page 3 perpage 5")
+		}
+	})
+
+	t.Run("check sql query for page 128 perpage 100", func(t *testing.T) {
+		sql := vulcan.NewQuery[UserTest]().Paginate(128, 100).Build().SQL()
+		fmt.Println(sql)
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users LIMIT 100 OFFSET 12700;` {
+			t.Errorf("pagination test failed page 128 perpage 100")
+		}
+	})
+}
+
+func TestQuery_CursorPagination(t *testing.T) {
+	t.Run("check cursor pagination for 1 page", func(t *testing.T) {
+		sql := vulcan.NewQuery[UserTest]().CursorPaginate("id", nil, 10).Build().SQL()
+		fmt.Println(sql)
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users ORDER BY "id" ASC LIMIT 10;` {
+			t.Errorf("cursor pagination failed")
+		}
+	})
+	t.Run("check cursor pagination for 2 page", func(t *testing.T) {
+		afterLastOne := 14
+		sql := vulcan.NewQuery[UserTest]().CursorPaginate("id", afterLastOne, 10).Build().SQL()
+		fmt.Println(sql)
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users WHERE "id" > $1 ORDER BY "id" ASC LIMIT 10;` {
+			t.Errorf("cursor pagination failed for page 2 cursor by id 14")
+		}
+	})
+
+	t.Run("check cursor pagination for 2 page change limit", func(t *testing.T) {
+		afterLastOne := 14
+		sql := vulcan.NewQuery[UserTest]().CursorPaginate("id", afterLastOne, 25).Build().SQL()
+		fmt.Println(sql)
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users WHERE "id" > $1 ORDER BY "id" ASC LIMIT 25;` {
+			t.Errorf("cursor pagination failed for page 2 cursor by id 14 perpage 25")
+		}
+	})
+
+	t.Run("check cursor pagination limit 25 use different column", func(t *testing.T) {
+		sql := vulcan.NewQuery[UserTest]().CursorPaginate("created_at", "2026-02-08 10:30:00", 25).Build().SQL()
+		fmt.Println(sql)
+		if sql != `SELECT "users"."id" AS users_id, "users"."name" AS users_name, "users"."last_name" AS users_last_name FROM users WHERE "created_at" > $1 ORDER BY "created_at" ASC LIMIT 25;` {
+			t.Errorf("cursor pagination failed for perpage 25 and use created_at")
+		}
+	})
 }
