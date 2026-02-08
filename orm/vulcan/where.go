@@ -57,20 +57,6 @@ func (q *Query[T]) OrWhereClause(clause func(*Query[T])) *Query[T] {
 	return q
 }
 
-func (q *Query[T]) WhereIn(col string, values []any) *Query[T] {
-	placeholders := ""
-	for i := range values {
-		if i > 0 {
-			placeholders += ", "
-		}
-		placeholders += "?"
-	}
-	statement := fmt.Sprintf(`%s IN (%s)`, col, placeholders)
-	q.Bindings = append(q.Bindings, values...)
-	q.whereExp += statement
-	return q
-}
-
 func (q *Query[T]) WhereAny(col string, values []any) *Query[T] {
 
 	statement := fmt.Sprintf(`%s = ANY(?)`, col)
