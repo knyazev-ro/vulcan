@@ -1,3 +1,9 @@
+![Version](https://img.shields.io/badge/version-v1.0.0-pink)
+![License](https://img.shields.io/github/license/knyazev-ro/vulcan)
+[![Docs](https://img.shields.io/badge/docs-online-blue)](https://github.com/knyazev-ro/vulcan/blob/main/docs/1.%20introduction.md)
+[![Docs](https://img.shields.io/badge/sandbox-blue)](https://github.com/knyazev-ro/vulcan/blob/main/sandbox)
+![Stars](https://img.shields.io/github/stars/knyazev-ro/vulcan?style=social)
+
 # **Vulcan ORM**
 
 **Vulcan ORM** — это высокопроизводительный SQL Query Builder и ORM на базе структур для Go. Синтаксис вдохновлен Laravel Query Builder, но архитектура построена на принципах **Data Mapper**.
