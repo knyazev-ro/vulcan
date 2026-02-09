@@ -6,7 +6,7 @@ import (
 )
 
 // IN WORK! Acceptable If Id field is defined. Experimental feature!
-func (q *Query[T]) Chunk(ctx context.Context, chunk int, closure func([]T) error) error {
+func (q *Query[T]) ChunkById(ctx context.Context, chunk int, closure func([]T) error) error {
 	var prev any
 	prev = nil
 	for {
@@ -32,7 +32,7 @@ func (q *Query[T]) Chunk(ctx context.Context, chunk int, closure func([]T) error
 }
 
 func (q *Query[T]) Each(ctx context.Context, closure func(T) error) error {
-	err := q.Chunk(ctx, 1000, func(t []T) error {
+	err := q.ChunkById(ctx, 1000, func(t []T) error {
 		for _, elem := range t {
 			err := closure(elem)
 			if err != nil {
