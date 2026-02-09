@@ -1,14 +1,18 @@
 package vulcan
 
-import "context"
+import (
+	"context"
+	"reflect"
+)
 
-// IN WORK!
+// IN WORK! Acceptable If Id field is defined. Experimental feature!
 func (q *Query[T]) Chunk(ctx context.Context, chunk int, closure func([]T) error) error {
 	var prev any
 	prev = nil
 	for {
 		data, err := q.CursorPaginate("id", prev, chunk).Load(ctx)
-		prev = data[len(data)-1] // TODO: REFLECT GET ID FROM METADATA!
+		prevT := data[len(data)-1] // TODO: REFLECT GET ID FROM METADATA!
+		prev = reflect.ValueOf(prevT).Elem().FieldByName("Id").Interface()
 
 		if err != nil {
 			return err
