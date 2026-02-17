@@ -5,15 +5,12 @@ import (
 	"reflect"
 )
 
-// IN WORK! Acceptable If Id field is defined. Experimental feature!
+// Experimental feature!
 func (q *Query[T]) ChunkById(ctx context.Context, chunk int, closure func([]T) error) error {
 	var prev any
 	prev = nil
 	for {
-		data, err := q.CursorPaginate("id", prev, chunk).Load(ctx)
-		prevT := data[len(data)-1] // TODO: REFLECT GET ID FROM METADATA!
-		prev = reflect.ValueOf(prevT).Elem().FieldByName("Id").Interface()
-
+		data, err := q.Clone().CursorPaginate(q.Model.Pks[0], prev, chunk).Load(ctx)
 		if err != nil {
 			return err
 		}
@@ -21,20 +18,22 @@ func (q *Query[T]) ChunkById(ctx context.Context, chunk int, closure func([]T) e
 		if len(data) <= 0 {
 			break
 		}
-
 		err = closure(data)
 
 		if err != nil {
 			return err
 		}
+
+		prevT := data[len(data)-1]
+		prev = reflect.ValueOf(prevT).FieldByName(q.Model.PksInStruct[0]).Interface()
 	}
 	return nil
 }
 
-func (q *Query[T]) Each(ctx context.Context, closure func(T) error) error {
+func (q *Query[T]) Each(ctx context.Context, closure func(*T) error) error {
 	err := q.ChunkById(ctx, 1000, func(t []T) error {
 		for _, elem := range t {
-			err := closure(elem)
+			err := closure(&elem)
 			if err != nil {
 				return err
 			}

@@ -11,7 +11,6 @@ import (
 )
 
 type Query[T any] struct {
-	returnType    T
 	Model         model.Model
 	Bindings      []any
 	selectExp     string
@@ -38,6 +37,26 @@ func NewQuery[T any]() *Query[T] {
 	return q
 }
 
+func (q *Query[T]) getFieldForCorrespondedColTags(i interface{}, cols []string) []string {
+	val := reflect.ValueOf(i).Elem()
+	structFieldNames := []string{}
+	for i := 0; i < val.NumField(); i++ {
+		fieldType := val.Type().Field(i)
+		col := fieldType.Tag.Get("col")
+		if col == "" {
+			continue
+		}
+
+		for _, colElem := range cols {
+			if col == colElem {
+				structFieldNames = append(structFieldNames, fieldType.Name)
+				break
+			}
+		}
+	}
+	return structFieldNames
+}
+
 func (q *Query[T]) SelectFromStruct(i interface{}) *Query[T] {
 	cols := q.generateCols(i, &GenerateColsOptions{useAggs: true})
 	metadata, ok := reflect.TypeOf(i).Elem().FieldByName("_")
@@ -45,10 +64,13 @@ func (q *Query[T]) SelectFromStruct(i interface{}) *Query[T] {
 		panic("metadata is not found")
 	}
 	pk := metadata.Tag.Get("pk")
+	pks := strings.Split(pk, ",")
+	pksInStruct := q.getFieldForCorrespondedColTags(i, pks)
 	q.Model = model.Model{
-		TableName: metadata.Tag.Get("table"),
-		Pk:        pk,
-		Pks:       strings.Split(pk, ","),
+		TableName:   metadata.Tag.Get("table"),
+		Pk:          pk,
+		Pks:         pks,
+		PksInStruct: pksInStruct,
 	}
 
 	if len(cols) > 0 {
@@ -143,4 +165,24 @@ func (q *Query[T]) fillBindingsPSQL() {
 	}
 
 	q.fullStatement = b.String()
+}
+
+func (q *Query[T]) Clone() *Query[T] {
+	return &Query[T]{
+		Model:         q.Model,
+		Bindings:      q.Bindings,
+		selectExp:     q.selectExp,
+		whereExp:      q.whereExp,
+		joinExp:       q.joinExp,
+		createExp:     q.createExp,
+		orderExp:      q.orderExp,
+		fromExp:       q.fromExp,
+		usingExp:      q.usingExp,
+		limitExp:      q.limitExp,
+		offsetExp:     q.offsetExp,
+		groupByExp:    q.groupByExp,
+		fullStatement: q.fullStatement,
+		whereHasMap:   q.whereHasMap,
+		db:            q.db,
+	}
 }

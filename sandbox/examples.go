@@ -208,6 +208,15 @@ func ExamplesORM() {
 	if ok {
 		fmt.Println("GET PostTag by Ids: ", postTag)
 	}
+
+	fmt.Println("Test Each and ChunkById")
+	err = vulcan.NewQuery[UserTest]().Each(ctx, func(ut *UserTest) error {
+		fmt.Println(ut)
+		return nil
+	})
+	if err != nil {
+		fmt.Println("Error during each: ", err.Error())
+	}
 }
 
 func Aggregations() {

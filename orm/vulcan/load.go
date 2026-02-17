@@ -9,7 +9,6 @@ func (q *Query[T]) LoadMap(ctx context.Context) ([]map[string]any, map[string][]
 	mapData := []map[string]any{}
 	pkMap := map[string][]any{}
 	q.Build()
-	// fmt.Println(q.SQL())
 	rows, err := q.db.QueryContext(ctx, q.fullStatement, q.Bindings...)
 	if err != nil {
 		return mapData, pkMap, err
