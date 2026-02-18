@@ -7,7 +7,7 @@
 
 **Vulcan ORM** — это высокопроизводительный SQL Query Builder и ORM на базе структур для Go. Синтаксис вдохновлен Laravel Query Builder, но архитектура построена на принципах **Data Mapper**.
 
-> **Важно:** Это часть экосистемы **Gerard**. Подробная документация по всем методам и продвинутым техникам доступна в директории [`/docs`](https://github.com/knyazev-ro/vulcan-orm/blob/main/docs/1.%20introduction.md)
+> **Важно:** Это часть экосистемы **Vulcan**. Подробная документация по всем методам и продвинутым техникам доступна в директории [`/docs`](https://github.com/knyazev-ro/vulcan-orm/blob/main/docs/1.%20introduction.md)
 
 > Для того, чтобы протестировать возможности Vulcan самостоятельно [`/sandbox`](https://github.com/knyazev-ro/vulcan-orm/blob/main/sandbox/sandbox.md)
 ---
