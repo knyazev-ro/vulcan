@@ -154,4 +154,4 @@ Vulcan ORM is open-sourced software licensed under the MIT license.
 
 ---
 
-*Developed by @knyazev-ro as part of the Gerard ecosystem.*
+*Developed by @knyazev-ro as part of the Vulcan ecosystem.*
