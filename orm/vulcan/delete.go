@@ -28,8 +28,18 @@ func (q *Query[T]) Delete(ctx context.Context) (int64, error) {
 	return affected, nil
 }
 
-func (q *Query[T]) DeleteById(ctx context.Context, id int64) (bool, error) {
-	q.Where("id", "=", id)
+func (q *Query[T]) DeleteById(ctx context.Context, ids ...int64) (bool, error) {
+	pks := q.Model.Pks
+
+	if len(pks) != len(ids) {
+		return false, &FindByIdError{message: "len of ids arguments and len of pk mismatch. len of pks should be == to len of ids arguments!"}
+	}
+
+	for idx, pk := range pks {
+		Id := fmt.Sprintf("%s.%s", q.Model.TableName, pk)
+		q.Where(Id, "=", ids[idx])
+	}
+
 	aff, err := q.Delete(ctx)
 	if err != nil {
 		return false, err
