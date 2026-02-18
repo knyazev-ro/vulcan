@@ -482,7 +482,7 @@ func RealExampleORMDvdRental() {
 
 	ctx := context.Background()
 
-	actors, err := vulcan.NewQuery[Actor]().Load(ctx)
+	actors, err := vulcan.NewQuery[Actor]().CursorPaginate("actor_id", 10, 10).Load(ctx)
 	if err != nil {
 		fmt.Println("err fetch actors", err)
 	} else {
