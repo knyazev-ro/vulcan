@@ -472,21 +472,32 @@ func RealExampleORMDvdRental() {
 		ConnMaxIdleTime: 5 * time.Minute,  // 5 min.
 	})
 	db.Init()
+	type ActorInfo struct {
+		_         string `type:"metadata" table:"actor_info" pk:"actor_id"`
+		ActorId   int64  `type:"column" col:"actor_id"`
+		FirstName string `type:"column" col:"first_name"`
+		LastName  string `type:"column" col:"last_name"`
+		FilmInfo  string `type:"column" col:"film_info"`
+	}
+
 	type Actor struct {
 		_          string    `type:"metadata" table:"actor" pk:"actor_id"`
 		ActorId    int64     `type:"column" col:"actor_id"`
 		FirstName  string    `type:"column" col:"first_name"`
 		LastName   string    `type:"column" col:"last_name"`
 		LastUpdate time.Time `type:"column" col:"last_update"`
+		Info       ActorInfo `type:"relation" reltype:"has-one" table:"actor_info" fk:"actor_id" originalkey:"actor_id"`
 	}
 
 	ctx := context.Background()
 
-	actors, err := vulcan.NewQuery[Actor]().CursorPaginate("actor_id", 10, 10).Load(ctx)
+	actors, err := vulcan.NewQuery[Actor]().CursorPaginate("actor_id", nil, 10).Load(ctx)
 	if err != nil {
 		fmt.Println("err fetch actors", err)
 	} else {
-		fmt.Println(actors)
+		for _, a := range actors {
+			fmt.Println(a)
+		}
 	}
 
 }

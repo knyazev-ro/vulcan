@@ -110,7 +110,7 @@ func (q *Query[T]) smartHydrationSync(ctx context.Context, model interface{}, pa
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	totalRelations := q.CountRelations(model)
-	results := make([]GorutineData, totalRelations)
+	results := []GorutineData{}
 
 	for i := 0; i < val.NumField(); i++ {
 		relFieldValue := val.Field(i)
@@ -191,7 +191,6 @@ func (q *Query[T]) smartHydrationSync(ctx context.Context, model interface{}, pa
 					return nil, err
 				}
 				data, err := q.smartHydrationSync(ctx, relStruct, subQuery, subQueryPkMap)
-
 				if err != nil {
 					cancel()
 					return nil, err
