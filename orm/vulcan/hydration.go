@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/knyazev-ro/vulcan/orm/consts"
-	"github.com/knyazev-ro/vulcan/orm/db"
+	"github.com/knyazev-ro/vulcan-orm/orm/consts"
+	"github.com/knyazev-ro/vulcan-orm/orm/db"
 )
 
 // Заполнение обычных полей, игнорирует заполнение полей-отношений

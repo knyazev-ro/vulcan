@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/knyazev-ro/vulcan/config"
-	"github.com/knyazev-ro/vulcan/orm/db"
-	"github.com/knyazev-ro/vulcan/orm/vulcan"
+	"github.com/knyazev-ro/vulcan-orm/config"
+	"github.com/knyazev-ro/vulcan-orm/orm/db"
+	"github.com/knyazev-ro/vulcan-orm/orm/vulcan"
 )
 
 func ExamplesORM() {

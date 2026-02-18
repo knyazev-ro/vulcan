@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/knyazev-ro/vulcan/orm/db"
+	"github.com/knyazev-ro/vulcan-orm/orm/db"
 )
 
 func (q *Query[T]) Delete(ctx context.Context) (int64, error) {

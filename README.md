@@ -1,15 +1,15 @@
 # **Vulcan ORM**
 ![Version](https://img.shields.io/badge/version-v1.0.0-pink)
 ![License](https://img.shields.io/github/license/knyazev-ro/vulcan)
-[![Docs](https://img.shields.io/badge/docs-online-blue)](https://github.com/knyazev-ro/vulcan/blob/main/docs/1.%20introduction.md)
-[![Docs](https://img.shields.io/badge/sandbox-blue)](https://github.com/knyazev-ro/vulcan/blob/main/sandbox/sandbox.md)
+[![Docs](https://img.shields.io/badge/docs-online-blue)](https://github.com/knyazev-ro/vulcan-orm/blob/main/docs/1.%20introduction.md)
+[![Docs](https://img.shields.io/badge/sandbox-blue)](https://github.com/knyazev-ro/vulcan-orm/blob/main/sandbox/sandbox.md)
 ![Stars](https://img.shields.io/github/stars/knyazev-ro/vulcan?style=social)
 
 **Vulcan ORM** — это высокопроизводительный SQL Query Builder и ORM на базе структур для Go. Синтаксис вдохновлен Laravel Query Builder, но архитектура построена на принципах **Data Mapper**.
 
-> **Важно:** Это часть экосистемы **Gerard**. Подробная документация по всем методам и продвинутым техникам доступна в директории [`/docs`](https://github.com/knyazev-ro/vulcan/blob/main/docs/1.%20introduction.md)
+> **Важно:** Это часть экосистемы **Gerard**. Подробная документация по всем методам и продвинутым техникам доступна в директории [`/docs`](https://github.com/knyazev-ro/vulcan-orm/blob/main/docs/1.%20introduction.md)
 
-> Для того, чтобы протестировать возможности Vulcan самостоятельно [`/sandbox`](https://github.com/knyazev-ro/vulcan/blob/main/sandbox/sandbox.md)
+> Для того, чтобы протестировать возможности Vulcan самостоятельно [`/sandbox`](https://github.com/knyazev-ro/vulcan-orm/blob/main/sandbox/sandbox.md)
 ---
 
 ## Архитектурная философия

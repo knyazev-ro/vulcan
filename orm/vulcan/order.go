@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/knyazev-ro/vulcan/utils"
+	"github.com/knyazev-ro/vulcan-orm/utils"
 )
 
 func (q *Query[T]) OrderBy(direction string, cols ...string) *Query[T] {

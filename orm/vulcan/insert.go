@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/knyazev-ro/vulcan/utils"
+	"github.com/knyazev-ro/vulcan-orm/utils"
 )
 
 func (q *Query[T]) Insert(ctx context.Context, cols []string, values [][]any) (int64, error) {

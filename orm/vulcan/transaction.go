@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/knyazev-ro/vulcan/orm/db"
+	"github.com/knyazev-ro/vulcan-orm/orm/db"
 )
 
 type DBConnection interface {

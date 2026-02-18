@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/knyazev-ro/vulcan/orm/consts"
+	"github.com/knyazev-ro/vulcan-orm/orm/consts"
 )
 
 func (q *Query[T]) reflectSliceToSlice(v []reflect.Value) []T {

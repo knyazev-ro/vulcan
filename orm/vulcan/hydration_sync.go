@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/knyazev-ro/vulcan/orm/consts"
+	"github.com/knyazev-ro/vulcan-orm/orm/consts"
 )
 
 // Умная гидрация. Умная, потому что тупая версия реализована была в первом прототипе, использовала LEFT JOIN для отношений

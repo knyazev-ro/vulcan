@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/knyazev-ro/vulcan/utils"
+	"github.com/knyazev-ro/vulcan-orm/utils"
 )
 
 func (q *Query[T]) GroupBy(cols []string) *Query[T] {

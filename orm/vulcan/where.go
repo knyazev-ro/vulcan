@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/knyazev-ro/vulcan/utils"
+	"github.com/knyazev-ro/vulcan-orm/utils"
 )
 
 type WhereQuery struct {

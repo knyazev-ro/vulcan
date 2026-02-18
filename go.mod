@@ -1,4 +1,4 @@
-module github.com/knyazev-ro/vulcan
+module github.com/knyazev-ro/vulcan-orm
 
 go 1.24.1
 

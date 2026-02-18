@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // драйвер для database/sql
-	"github.com/knyazev-ro/vulcan/orm/db"
-	"github.com/knyazev-ro/vulcan/orm/model"
+	"github.com/knyazev-ro/vulcan-orm/orm/db"
+	"github.com/knyazev-ro/vulcan-orm/orm/model"
 )
 
 type Query[T any] struct {

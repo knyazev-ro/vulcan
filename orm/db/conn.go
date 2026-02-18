@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/knyazev-ro/vulcan/config"
+	"github.com/knyazev-ro/vulcan-orm/config"
 )
 
 var GlobalLimit chan struct{}

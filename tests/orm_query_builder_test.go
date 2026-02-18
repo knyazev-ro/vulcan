@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/knyazev-ro/vulcan/orm/vulcan"
+	"github.com/knyazev-ro/vulcan-orm/orm/vulcan"
 )
 
 type TagTest struct {

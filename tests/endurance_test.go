@@ -6,8 +6,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/knyazev-ro/vulcan/orm/db"
-	"github.com/knyazev-ro/vulcan/orm/vulcan"
+	"github.com/knyazev-ro/vulcan-orm/orm/db"
+	"github.com/knyazev-ro/vulcan-orm/orm/vulcan"
 )
 
 type Report struct {

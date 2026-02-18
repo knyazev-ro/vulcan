@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/knyazev-ro/vulcan/orm/model"
+	"github.com/knyazev-ro/vulcan-orm/orm/model"
 )
 
 type GenerateColStringStruct struct {
