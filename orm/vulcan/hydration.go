@@ -158,8 +158,6 @@ type GorutineData struct {
 }
 
 func (q *Query[T]) fillWithPrimitive(field reflect.Value, row map[string]any, colKey string) reflect.Value {
-	fmt.Println(field.Type().Name())
-
 	switch v := row[colKey].(type) {
 	case int64:
 		field.SetInt(v)
