@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/knyazev-ro/vulcan/config"
 	"github.com/knyazev-ro/vulcan/orm/db"
 	"github.com/knyazev-ro/vulcan/orm/vulcan"
 )
@@ -453,5 +454,39 @@ func RealExampleORM() {
 	fmt.Println("Loaded reports:", len(reports))
 
 	// fmt.Println(vulcan.NewQuery[ReportWithAggCount]().CLoad())
+
+}
+
+func RealExampleORMDvdRental() {
+	config.SetConfig(&config.Config{
+		Driver:          "postgres",
+		User:            "postgres",
+		Password:        "123",
+		Host:            "localhost",
+		Port:            "5432",
+		Database:        "dvdrental",
+		SemaphoreLimit:  100,
+		MaxOpenConns:    100,
+		MaxIdleConns:    100,
+		ConnMaxLifetime: 30 * time.Minute, // 30 min.
+		ConnMaxIdleTime: 5 * time.Minute,  // 5 min.
+	})
+	db.Init()
+	type Actor struct {
+		_          string    `type:"metadata" table:"actor" pk:"actor_id"`
+		ActorId    int64     `type:"column" col:"actor_id"`
+		FirstName  string    `type:"column" col:"first_name"`
+		LastName   string    `type:"column" col:"last_name"`
+		LastUpdate time.Time `type:"column" col:"last_update"`
+	}
+
+	ctx := context.Background()
+
+	actors, err := vulcan.NewQuery[Actor]().Load(ctx)
+	if err != nil {
+		fmt.Println("err fetch actors", err)
+	} else {
+		fmt.Println(actors)
+	}
 
 }

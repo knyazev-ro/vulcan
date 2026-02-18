@@ -50,6 +50,7 @@ func (q *Query[T]) LoadMap(ctx context.Context) ([]map[string]any, map[string][]
 
 		mapData = append(mapData, colsMap)
 	}
+
 	return mapData, pkMap, nil
 }
 

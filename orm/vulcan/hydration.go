@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/knyazev-ro/vulcan/orm/consts"
 	"github.com/knyazev-ro/vulcan/orm/db"
@@ -157,39 +158,21 @@ type GorutineData struct {
 }
 
 func (q *Query[T]) fillWithPrimitive(field reflect.Value, row map[string]any, colKey string) reflect.Value {
-	if field.Kind() == reflect.Int64 {
-		switch v := row[colKey].(type) {
-		case int64:
-			field.SetInt(v)
-		case int: // на случай, если значение int
-			field.SetInt(int64(v))
-		default:
-			field.SetInt(0) // если тип не подходит
-		}
-		return field
+	fmt.Println(field.Type().Name())
 
-	}
-	// string
-	if field.Kind() == reflect.String {
-		switch v := row[colKey].(type) {
-		case string:
-			field.SetString(string(v))
-		default:
-			field.SetString("") // если тип не подходит
-		}
-		return field
-	}
-
-	// bool
-	if field.Kind() == reflect.Bool {
-		switch v := row[colKey].(type) {
-		case bool:
-			field.SetBool(bool(v))
-		default:
-			field.SetBool(false) // если тип не подходит
-		}
-		return field
-
+	switch v := row[colKey].(type) {
+	case int64:
+		field.SetInt(v)
+	case int: // на случай, если значение int
+		field.SetInt(int64(v))
+	case string:
+		field.SetString(string(v))
+	case bool:
+		field.SetBool(bool(v))
+	case time.Time:
+		field.Set(reflect.ValueOf(v))
+	default:
+		fmt.Printf("Unexpected type %T! \n", v)
 	}
 	return field
 }
